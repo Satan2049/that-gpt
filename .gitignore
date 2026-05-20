@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+server/.env
+server/data/chats/*.json
+server/data/prompts/*.json
+!server/data/chats/.gitkeep
+!server/data/prompts/.gitkeep
