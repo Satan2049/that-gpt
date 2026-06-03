@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Chatterbox — self-hosted chat UI for any OpenAI-compatible API. JSON file storage, no database, API keys stay on the server."
+    />
+    <meta name="theme-color" content="#3f6fff" />
+    <title>Chatterbox — Self-hosted chat for OpenAI-compatible APIs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --surface: #ffffff;
+        --text: #101725;
+        --muted: #5a6476;
+        --primary: #3f6fff;
+        --primary-hover: #2f5ae6;
+        --border: #d9e0ef;
+        --code-bg: #eef3ff;
+        --radius: 12px;
+        --shadow: 0 12px 40px rgba(16, 23, 37, 0.08);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1420;
+          --surface: #171f2f;
+          --text: #ebeff8;
+          --muted: #9aa6c0;
+          --primary: #7da0ff;
+          --primary-hover: #9ab4ff;
+          --border: #2c3952;
+          --code-bg: #1e2a42;
+          --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      a {
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 24px 80px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 0;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .logo {
+        font-weight: 700;
+        font-size: 1.125rem;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .logo span {
+        color: var(--primary);
+      }
+
+      nav {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 0.9375rem;
+      }
+
+      nav a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+
+      nav a:hover {
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      .hero {
+        text-align: center;
+        padding: 48px 0 32px;
+      }
+
+      .badge-row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        background: var(--code-bg);
+        color: var(--primary);
+        border: 1px solid var(--border);
+      }
+
+      h1 {
+        font-size: clamp(2rem, 5vw, 3rem);
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+        margin: 0 0 16px;
+        font-weight: 700;
+      }
+
+      .lead {
+        font-size: 1.125rem;
+        color: var(--muted);
+        max-width: 640px;
+        margin: 0 auto 32px;
+      }
+
+      .cta-row {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 48px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 22px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        transition: background 0.15s ease, transform 0.15s ease;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: var(--primary-hover);
+        text-decoration: none;
+        transform: translateY(-1px);
+      }
+
+      .btn-secondary {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .btn-secondary:hover {
+        border-color: var(--primary);
+        text-decoration: none;
+      }
+
+      .preview {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 64px;
+      }
+
+      .preview img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      section {
+        margin-bottom: 56px;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+        letter-spacing: -0.02em;
+        margin: 0 0 20px;
+        text-align: center;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+      }
+
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 1.0625rem;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9375rem;
+      }
+
+      .arch {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px 28px;
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+        font-size: 0.875rem;
+        line-height: 1.7;
+        overflow-x: auto;
+      }
+
+      .steps {
+        counter-reset: step;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 16px;
+      }
+
+      .steps li {
+        counter-increment: step;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 20px 20px 56px;
+        position: relative;
+      }
+
+      .steps li::before {
+        content: counter(step);
+        position: absolute;
+        left: 20px;
+        top: 20px;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: var(--code-bg);
+        color: var(--primary);
+        font-weight: 700;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      pre {
+        margin: 12px 0 0;
+        padding: 14px 16px;
+        background: var(--code-bg);
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.8125rem;
+      }
+
+      code {
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+      }
+
+      footer {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.875rem;
+        padding-top: 24px;
+        border-top: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <a class="logo" href="./">Chatter<span>box</span></a>
+        <nav aria-label="Primary">
+          <a href="#features">Features</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#start">Quick start</a>
+          <a href="https://github.com/Satan2049/chatter-box">GitHub</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div class="badge-row">
+          <span class="badge">OpenAI-compatible</span>
+          <span class="badge">No database</span>
+          <span class="badge">MIT</span>
+        </div>
+        <h1>Self-hosted chat.<br />Your keys never leave the server.</h1>
+        <p class="lead">
+          A small React UI and Fastify API for any OpenAI-compatible provider.
+          Conversations and prompt presets live as JSON on disk—run it locally,
+          point it at OpenAI, Azure, or Ollama, and start chatting.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/Satan2049/chatter-box#quick-start"
+            >Get started</a
+          >
+          <a class="btn btn-secondary" href="https://github.com/Satan2049/chatter-box"
+            >View source</a
+          >
+        </div>
+        <div class="preview">
+          <img
+            src="./assets/app-preview.svg"
+            alt="Chatterbox interface: conversation sidebar, messages, and composer"
+            width="920"
+            height="520"
+          />
+        </div>
+      </section>
+
+      <section id="features">
+        <h2>Built for local, private use</h2>
+        <div class="features">
+          <article class="card">
+            <h3>File-backed storage</h3>
+            <p>
+              One JSON file per conversation and preset under <code>server/data/</code>.
+              No Postgres, no Redis—easy to back up and inspect.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Vision support</h3>
+            <p>
+              Attach JPEG, PNG, or WebP images to messages. The server validates
+              type, size, and count before forwarding to your provider.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Prompt presets</h3>
+            <p>
+              Save system prompts with per-preset model and temperature. Switch
+              presets per conversation from the sidebar.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Server-side API key</h3>
+            <p>
+              The browser talks only to your Fastify backend. Provider credentials
+              stay in <code>server/.env</code>, not in the client bundle.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Light &amp; dark theme</h3>
+            <p>
+              Toggle appearance from the header. Your choice persists in
+              <code>localStorage</code> in the browser.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Clear errors</h3>
+            <p>
+              Timeouts, rate limits, invalid keys, and network failures surface as
+              readable messages in the UI.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <h2>Architecture</h2>
+        <div class="arch">
+          <div>client/ &nbsp; React + Vite + Zustand &nbsp; → &nbsp; proxies /api to server</div>
+          <div>server/ &nbsp; Fastify + TypeScript &nbsp;&nbsp; → &nbsp; file storage + AI proxy</div>
+          <br />
+          <div>Browser ──HTTP──► Fastify ──HTTPS──► OpenAI-compatible API</div>
+          <div>              └── reads/writes JSON under server/data/</div>
+        </div>
+      </section>
+
+      <section id="start">
+        <h2>Quick start</h2>
+        <ol class="steps">
+          <li>
+            <strong>Prerequisites</strong> — Node.js 20+ and an API key for your provider.
+            <pre><code>git clone https://github.com/Satan2049/chatter-box.git
+cd chatter-box</code></pre>
+          </li>
+          <li>
+            <strong>Install</strong>
+            <pre><code>npm install --prefix server
+npm install --prefix client</code></pre>
+          </li>
+          <li>
+            <strong>Configure</strong>
+            <pre><code>cp server/.env.example server/.env
+# Set AI_API_KEY (and optionally AI_BASE_URL, AI_MODEL)</code></pre>
+          </li>
+          <li>
+            <strong>Run</strong> — API on port 3001, UI on 5173.
+            <pre><code>npm run dev:server   # terminal 1
+npm run dev:client   # terminal 2</code></pre>
+          </li>
+        </ol>
+        <p style="text-align: center; margin-top: 24px; color: var(--muted)">
+          Open <a href="http://127.0.0.1:5173">http://127.0.0.1:5173</a> and send your first message.
+          Full docs: <a href="https://github.com/Satan2049/chatter-box/blob/main/README.md">README</a>.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          MIT License ·
+          <a href="https://github.com/Satan2049/chatter-box">Satan2049/chatter-box</a>
+        </p>
+        <p style="margin-top: 8px">
+          No authentication—use on localhost or behind your own access controls.
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>
