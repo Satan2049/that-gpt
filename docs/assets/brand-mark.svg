@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" role="img" aria-label="Chatterbox">
+  <rect width="40" height="40" rx="10" fill="#3f6fff"/>
+  <path
+    d="M11 14.5C11 12.01 13.01 10 15.5 10h9C26.99 10 29 12.01 29 14.5v9.5c0 2.49-2.01 4.5-4.5 4.5h-4.3L15.5 30v-3.5h0C13.01 26.5 11 24.49 11 22V14.5Z"
+    fill="#ffffff"
+  />
+</svg>
