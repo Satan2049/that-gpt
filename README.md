@@ -42,8 +42,6 @@ ChatNest is a stable, open-source desktop chat client (v1.0). Conversations, pro
 
 ## Screenshots
 
-> Add captures to [`assets/screenshots/`](assets/screenshots/) before publishing.
-
 <table>
 <tr>
 <td width="33%"><img src="assets/screenshots/screenshot-chat.png" alt="Chat view" width="100%" /><br /><sub>Main chat</sub></td>
@@ -55,7 +53,7 @@ ChatNest is a stable, open-source desktop chat client (v1.0). Conversations, pro
 <p align="center">
   <img src="assets/screenshots/demo.gif" alt="ChatNest demo" width="720" />
   <br />
-  <sub>Demo GIF — replace with a short screen recording</sub>
+  <sub>Demo GIF</sub>
 </p>
 
 ## Installation
