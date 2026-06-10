@@ -1,18 +1,25 @@
 {
-  "name": "chatterbox",
-  "version": "0.1.0",
-  "description": "Chatterbox — self-hosted chat UI with OpenAI-compatible API proxy and local JSON storage",
+  "name": "chat-nest",
+  "version": "1.1.0",
+  "description": "ChatNest — desktop chat with OpenAI-compatible API proxy and local JSON storage",
   "license": "MIT",
   "private": false,
   "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build && node scripts/stage-portable.mjs",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build && node scripts/stage-portable.mjs",
+    "build:installer": "tauri build --bundles nsis && node scripts/stage-portable.mjs",
+    "build:portable": "tauri build --bundles none && node scripts/stage-portable.mjs",
     "dev:client": "npm --prefix client run dev",
-    "dev:server": "npm --prefix server run dev",
     "build:client": "npm --prefix client run build",
-    "build:server": "npm --prefix server run build",
-    "test": "npm --prefix server run test",
-    "postinstall": "npm install --prefix server && npm install --prefix client"
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "release:package": "powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1",
+    "release:hashes": "powershell -ExecutionPolicy Bypass -File scripts/generate-sha256.ps1",
+    "release:verify": "powershell -ExecutionPolicy Bypass -File scripts/generate-sha256.ps1 -Package",
+    "postinstall": "npm install --prefix client"
   },
-  "engines": {
-    "node": ">=20"
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2"
   }
 }

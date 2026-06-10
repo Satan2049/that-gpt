@@ -1,6 +1,19 @@
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { conversationExportFilename, downloadTextFile } from "../../../shared/lib/downloadTextFile";
 import { create } from "zustand";
 import type { Conversation, ConversationSummary } from "../types/chat.types";
 import * as chatApi from "../services/chatApi";
+
+type StreamStartPayload = {
+  conversationId: string;
+  messageId: string;
+};
+
+type StreamChunkPayload = {
+  conversationId: string;
+  messageId: string;
+  delta: string;
+};
 
 type ChatState = {
   summaries: ConversationSummary[];
@@ -9,6 +22,8 @@ type ChatState = {
   loadingList: boolean;
   loadingConversation: boolean;
   sending: boolean;
+  streamingMessageId: string | null;
+  exporting: boolean;
   error: string | null;
   loadConversations: () => Promise<void>;
   selectConversation: (id: string) => Promise<void>;
@@ -22,6 +37,9 @@ type ChatState = {
     text: string,
     images?: Array<{ mimeType: string; base64: string }>
   ) => Promise<void>;
+  exportActiveConversation: (format: "json" | "markdown") => Promise<void>;
+  onStreamStart: (payload: StreamStartPayload) => void;
+  onStreamChunk: (payload: StreamChunkPayload) => void;
   clearError: () => void;
 };
 
@@ -32,9 +50,59 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadingList: false,
   loadingConversation: false,
   sending: false,
+  streamingMessageId: null,
+  exporting: false,
   error: null,
 
   clearError: () => set({ error: null }),
+
+  onStreamStart: ({ conversationId, messageId }) => {
+    set((state) => {
+      if (state.activeConversationId !== conversationId || !state.activeConversation) {
+        return state;
+      }
+
+      if (state.activeConversation.messages.some((m) => m.id === messageId)) {
+        return { streamingMessageId: messageId };
+      }
+
+      return {
+        streamingMessageId: messageId,
+        activeConversation: {
+          ...state.activeConversation,
+          messages: [
+            ...state.activeConversation.messages,
+            {
+              id: messageId,
+              conversationId,
+              role: "assistant",
+              content: "",
+              createdAt: new Date().toISOString()
+            }
+          ]
+        }
+      };
+    });
+  },
+
+  onStreamChunk: ({ conversationId, messageId, delta }) => {
+    set((state) => {
+      if (state.activeConversationId !== conversationId || !state.activeConversation) {
+        return state;
+      }
+
+      return {
+        activeConversation: {
+          ...state.activeConversation,
+          messages: state.activeConversation.messages.map((message) =>
+            message.id === messageId
+              ? { ...message, content: message.content + delta }
+              : message
+          )
+        }
+      };
+    });
+  },
 
   loadConversations: async () => {
     set({ loadingList: true, error: null });
@@ -48,7 +116,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (e) {
       set({
         loadingList: false,
-        error: e instanceof Error ? e.message : "Failed to load conversations"
+        error: errorMessage(e, "Failed to load conversations")
       });
     }
   },
@@ -57,7 +125,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       loadingConversation: true,
       error: null,
-      activeConversationId: id
+      activeConversationId: id,
+      streamingMessageId: null
     });
     try {
       const conversation = await chatApi.apiGetConversation(id);
@@ -65,7 +134,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (err) {
       set({
         loadingConversation: false,
-        error: err instanceof Error ? err.message : "Failed to load conversation"
+        error: errorMessage(err, "Failed to load conversation")
       });
     }
   },
@@ -84,11 +153,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
           ...state.summaries
         ],
         activeConversationId: conversation.id,
-        activeConversation: conversation
+        activeConversation: conversation,
+        streamingMessageId: null
       }));
     } catch (e) {
       set({
-        error: e instanceof Error ? e.message : "Failed to create conversation"
+        error: errorMessage(e, "Failed to create conversation")
       });
     }
   },
@@ -104,12 +174,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
         if (summaries.length > 0) {
           await get().selectConversation(summaries[0].id);
         } else {
-          set({ activeConversationId: null, activeConversation: null });
+          set({ activeConversationId: null, activeConversation: null, streamingMessageId: null });
         }
       }
     } catch (e) {
       set({
-        error: e instanceof Error ? e.message : "Failed to delete conversation"
+        error: errorMessage(e, "Failed to delete conversation")
       });
     }
   },
@@ -128,17 +198,45 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
     } catch (e) {
       set({
-        error: e instanceof Error ? e.message : "Failed to update conversation"
+        error: errorMessage(e, "Failed to update conversation")
       });
     }
   },
 
   sendMessage: async (text, images) => {
     const trimmed = text.trim();
-    const { activeConversationId } = get();
-    if ((!trimmed && !(images?.length ?? 0)) || !activeConversationId) return;
+    const { activeConversationId, activeConversation } = get();
+    if ((!trimmed && !(images?.length ?? 0)) || !activeConversationId || !activeConversation) {
+      return;
+    }
 
-    set({ sending: true, error: null });
+    const optimisticUserId = crypto.randomUUID();
+    const optimisticUser = {
+      id: optimisticUserId,
+      conversationId: activeConversationId,
+      role: "user" as const,
+      content: trimmed,
+      createdAt: new Date().toISOString(),
+      ...(images?.length
+        ? {
+            images: images.map((img) => ({
+              mimeType: img.mimeType as "image/jpeg" | "image/png" | "image/webp",
+              base64: img.base64
+            }))
+          }
+        : {})
+    };
+
+    set({
+      sending: true,
+      streamingMessageId: null,
+      error: null,
+      activeConversation: {
+        ...activeConversation,
+        messages: [...activeConversation.messages, optimisticUser]
+      }
+    });
+
     try {
       const result = await chatApi.apiSendMessage(activeConversationId, trimmed, {
         ...(images?.length ? { images } : {})
@@ -147,12 +245,41 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({
         activeConversation: result.conversation,
         sending: false,
+        streamingMessageId: null,
         summaries
       });
     } catch (e) {
-      set({
+      set((state) => ({
         sending: false,
-        error: e instanceof Error ? e.message : "Failed to send message"
+        streamingMessageId: null,
+        error: errorMessage(e, "Failed to send message"),
+        activeConversation: state.activeConversation
+          ? {
+              ...state.activeConversation,
+              messages: state.activeConversation.messages.filter(
+                (m) => m.id !== optimisticUserId
+              )
+            }
+          : null
+      }));
+    }
+  },
+
+  exportActiveConversation: async (format) => {
+    const { activeConversationId, activeConversation } = get();
+    if (!activeConversationId || !activeConversation) return;
+
+    set({ exporting: true, error: null });
+    try {
+      const content = await chatApi.apiExportConversation(activeConversationId, format);
+      const filename = conversationExportFilename(activeConversation.title, format);
+      const mimeType = format === "json" ? "application/json" : "text/markdown";
+      downloadTextFile(filename, content, mimeType);
+      set({ exporting: false });
+    } catch (e) {
+      set({
+        exporting: false,
+        error: errorMessage(e, "Failed to export conversation")
       });
     }
   }

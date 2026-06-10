@@ -1,8 +1,7 @@
 import { type FormEvent, useState } from "react";
 import type { PromptPreset } from "../types/prompt.types";
+import { useDefaultModel } from "../../settings/store/settingsStore";
 import { usePromptStore } from "../store/promptStore";
-
-const MODEL_FALLBACK = "gpt-4o-mini";
 
 function emptyForm() {
   return {
@@ -22,6 +21,7 @@ export function PromptPresetPanel() {
   const updatePreset = usePromptStore((s) => s.updatePreset);
   const deletePreset = usePromptStore((s) => s.deletePreset);
   const clearError = usePromptStore((s) => s.clearError);
+  const modelFallback = useDefaultModel();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -60,7 +60,7 @@ export function PromptPresetPanel() {
         systemPrompt,
         temperature,
         maxTokens: Math.round(maxTokens),
-        model: model || MODEL_FALLBACK
+        model: model || modelFallback
       });
     } else {
       ok = await createPreset({
@@ -162,7 +162,7 @@ export function PromptPresetPanel() {
             type="text"
             value={form.model}
             onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
-            placeholder={`Optional for new · server default ${MODEL_FALLBACK}`}
+            placeholder={`Optional for new · server default ${modelFallback}`}
           />
         </label>
         <div className="preset-form-actions">

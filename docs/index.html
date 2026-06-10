@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Chatterbox — professional self-hosted chat UI for OpenAI-compatible APIs. File-backed storage, server-side credentials, React and Fastify."
+      content="ChatNest — desktop chat for OpenAI-compatible APIs. File-backed storage, Rust backend, React UI."
     />
     <meta name="theme-color" content="#3f6fff" />
-    <meta property="og:title" content="Chatterbox" />
+    <meta property="og:title" content="ChatNest" />
     <meta
       property="og:description"
-      content="Self-hosted chat for OpenAI-compatible APIs. JSON storage, no database."
+      content="Desktop chat for OpenAI-compatible APIs. JSON storage, no database."
     />
-    <title>Chatterbox</title>
+    <title>ChatNest</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -35,8 +35,8 @@
             </svg>
           </span>
           <span>
-            <span class="brand-name">Chatterbox</span>
-            <span class="brand-tag">Self-hosted · OpenAI-compatible</span>
+            <span class="brand-name">ChatNest</span>
+            <span class="brand-tag">Desktop · OpenAI-compatible</span>
           </span>
         </a>
         <div class="topbar-actions">
@@ -44,12 +44,14 @@
             <a href="#overview">Overview</a>
             <a href="#capabilities">Capabilities</a>
             <a href="#architecture">Architecture</a>
+            <a href="#download">Download</a>
+            <a href="#trust">Trust</a>
             <a href="#setup">Setup</a>
           </nav>
           <button type="button" class="btn btn-ghost" id="theme-toggle" aria-label="Toggle color theme">
             Dark mode
           </button>
-          <a class="btn btn-primary" href="https://github.com/Satan2049/chatter-box#quick-start">Get started</a>
+          <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases">Download v1.1.0</a>
         </div>
       </header>
 
@@ -57,47 +59,38 @@
         <section id="overview" class="hero-grid">
           <article class="panel hero-copy">
             <div class="eyebrow">
-              <span class="pill pill-accent">OpenAI-compatible</span>
-              <span class="pill">File storage</span>
+              <span class="pill pill-accent">v1.1.0</span>
+              <span class="pill">OpenAI-compatible</span>
+              <span class="pill">Windows</span>
               <span class="pill">MIT</span>
             </div>
             <p class="section-title">Product overview</p>
-            <h1>Local chat interface with server-side API credentials</h1>
+            <h1>Desktop chat with credentials kept in the Rust shell</h1>
             <p class="hero-lead">
-              Chatterbox pairs a React client with a Fastify API proxy. Conversation history and
-              prompt presets persist as JSON on disk. Configure any compatible provider—OpenAI,
-              Azure OpenAI, or Ollama—and run entirely on your infrastructure.
+              ChatNest pairs a React UI with a Rust + Tauri backend. Conversation history and
+              prompt presets persist as JSON on disk. Streaming replies, in-app settings, and
+              export to Markdown or JSON — configure any compatible provider and run locally.
             </p>
             <div class="hero-cta">
-              <a class="btn btn-primary" href="https://github.com/Satan2049/chatter-box#quick-start"
-                >Quick start</a
-              >
-              <a class="btn" href="https://github.com/Satan2049/chatter-box/blob/main/README.md"
-                >Documentation</a
-              >
-              <a class="btn" href="https://github.com/Satan2049/chatter-box">Source code</a>
+              <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases">Download release</a>
+              <a class="btn" href="https://github.com/Satan2049/chat-nest">GitHub</a>
             </div>
           </article>
           <figure class="panel hero-preview">
-            <img
-              id="app-preview"
-              src="./assets/app-preview.svg"
-              alt="Chatterbox UI: conversation list, message thread, and composer"
-              width="880"
-              height="500"
-              loading="eager"
-            />
+            <p class="hero-lead" style="padding: 2rem; text-align: center; margin: 0;">
+              Run <code>npm run dev</code> to open the ChatNest desktop window.
+            </p>
           </figure>
         </section>
 
         <section class="metrics" aria-label="Highlights">
           <article class="panel metric">
             <strong>Credentials isolated</strong>
-            <span><code>AI_API_KEY</code> is read only by the Fastify server, never exposed to the browser bundle.</span>
+            <span><code>AI_API_KEY</code> is read only by the Rust backend, never exposed to the UI bundle.</span>
           </article>
           <article class="panel metric">
             <strong>No database layer</strong>
-            <span>Threads and presets are plain JSON under <code>server/data/</code> for simple backup and inspection.</span>
+            <span>Threads and presets are plain JSON in the app data directory for simple backup and inspection.</span>
           </article>
           <article class="panel metric">
             <strong>Provider-agnostic</strong>
@@ -119,7 +112,19 @@
             </article>
             <article class="panel feature">
               <h3>Multimodal input</h3>
-              <p>Attach JPEG, PNG, or WebP images. The API validates MIME type, size, and count before forwarding.</p>
+              <p>Attach JPEG, PNG, or WebP images. The backend validates MIME type, size, and count before forwarding.</p>
+            </article>
+            <article class="panel feature">
+              <h3>Streaming responses</h3>
+              <p>Assistant messages render token-by-token as the provider streams the completion.</p>
+            </article>
+            <article class="panel feature">
+              <h3>In-app settings</h3>
+              <p>API key, base URL, model, system prompt, timeout, and retries — editable from Settings.</p>
+            </article>
+            <article class="panel feature">
+              <h3>Export conversations</h3>
+              <p>Download the active thread as Markdown or JSON from the header export menu.</p>
             </article>
             <article class="panel feature">
               <h3>Theme persistence</h3>
@@ -130,26 +135,25 @@
               <p>Timeouts, rate limits, authentication failures, and network issues return actionable UI messages.</p>
             </article>
             <article class="panel feature">
-              <h3>Minimal dependencies</h3>
-              <p>Node.js 20+, React with Vite, and Fastify. No Redis, Postgres, or external session store.</p>
+              <h3>Native desktop</h3>
+              <p>React with Vite in a Tauri window. Rust handles storage, validation, and provider calls.</p>
             </article>
           </div>
         </section>
 
         <section id="architecture" class="section-block">
           <p class="section-title">System design</p>
-          <h2 class="section-heading">Two-tier layout</h2>
+          <h2 class="section-heading">Desktop shell layout</h2>
           <div class="panel flow">
             <div class="flow-row" role="img" aria-label="Request flow diagram">
-              <span class="flow-node">Browser (React)</span>
+              <span class="flow-node">WebView (React)</span>
               <span class="flow-arrow" aria-hidden="true">→</span>
-              <span class="flow-node flow-node-accent">Fastify API</span>
+              <span class="flow-node flow-node-accent">Rust (Tauri)</span>
               <span class="flow-arrow" aria-hidden="true">→</span>
               <span class="flow-node">Provider API</span>
             </div>
             <p class="flow-caption">
-              Vite dev server proxies <code>/api</code> to the backend. Production builds serve static
-              assets separately; the API remains the single integration point for AI calls and file I/O.
+              The UI calls Rust via Tauri <code>invoke</code>. The backend is the single integration point for AI calls and file I/O.
             </p>
           </div>
           <dl class="stack" style="margin-top: 12px">
@@ -158,10 +162,56 @@
               <dd>React · Vite · Zustand → UI state, chat &amp; preset forms</dd>
             </div>
             <div class="panel stack-item">
-              <dt>server/</dt>
-              <dd>Fastify · TypeScript → routes, validation, AI client, repositories</dd>
+              <dt>src-tauri/</dt>
+              <dd>Rust · Tauri → commands, validation, AI client, repositories</dd>
             </div>
           </dl>
+        </section>
+
+        <section id="download" class="section-block">
+          <p class="section-title">Download</p>
+          <h2 class="section-heading">Windows x64 — v1.1.0</h2>
+          <div class="panel" style="padding: 1.25rem">
+            <p style="margin-top: 0">
+              Pre-built binaries are published on
+              <a href="https://github.com/Satan2049/chat-nest/releases">GitHub Releases</a>:
+              portable <code>.exe</code> or NSIS setup installer.
+            </p>
+            <p>
+              Verify downloads with <a href="./TRUST.md">SHA256 checksums</a> and optional
+              <a href="#trust">VirusTotal reports</a> below.
+            </p>
+            <div class="hero-cta" style="margin-top: 1rem">
+              <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases">Get ChatNest</a>
+              <a class="btn" href="./TRUST.md">Trust &amp; verification</a>
+            </div>
+          </div>
+        </section>
+
+        <section id="trust" class="section-block">
+          <p class="section-title">Trust</p>
+          <h2 class="section-heading">VirusTotal reports (v1.1.0)</h2>
+          <p class="hero-lead" style="max-width: 720px">
+            Independent scans for the published Windows builds. Two heuristic engines (SecureAge, Trapmine)
+            may flag new unsigned binaries — see
+            <a href="./TRUST.md#interpreting-results">interpreting results</a>.
+          </p>
+          <div class="features" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))">
+            <article class="panel feature">
+              <h3>Portable EXE</h3>
+              <p>
+                <a href="https://www.virustotal.com/gui/file/a67da016dc47add860ed38c57de5461abcd4365aa59e597718208a0876876b8b">View VirusTotal report</a>
+              </p>
+              <p><code style="word-break: break-all">SHA256: a67da016…876b8b</code></p>
+            </article>
+            <article class="panel feature">
+              <h3>NSIS setup EXE</h3>
+              <p>
+                <a href="https://www.virustotal.com/gui/file/a92cb98a81771f10cd127bc4adb56e22a502394f46c1600b6b2eb44fd9e8e696">View VirusTotal report</a>
+              </p>
+              <p><code style="word-break: break-all">SHA256: a92cb98a…8e696</code></p>
+            </article>
+          </div>
         </section>
 
         <section id="setup" class="section-block">
@@ -170,66 +220,70 @@
           <ol class="steps">
             <li class="panel step">
               <div class="step-header">
-                <span class="step-num">Step 1</span>
-                <span class="step-title">Clone and install</span>
+                <span class="step-num">Option A</span>
+                <span class="step-title">Download a release</span>
               </div>
-              <pre><code>git clone https://github.com/Satan2049/chatter-box.git
-cd chatter-box
-npm install --prefix server
-npm install --prefix client</code></pre>
+              <pre><code># GitHub Releases → portable .exe or setup installer
+# Verify SHA256.txt from the same release</code></pre>
             </li>
             <li class="panel step">
               <div class="step-header">
-                <span class="step-num">Step 2</span>
-                <span class="step-title">Configure environment</span>
+                <span class="step-num">Option B</span>
+                <span class="step-title">Build from source</span>
               </div>
-              <pre><code>cp server/.env.example server/.env
-# Required: AI_API_KEY
-# Optional: AI_BASE_URL, AI_MODEL, AI_DEFAULT_SYSTEM_PROMPT</code></pre>
+              <pre><code>git clone https://github.com/Satan2049/chat-nest.git
+cd chat-nest
+npm install
+npm run build</code></pre>
             </li>
             <li class="panel step">
               <div class="step-header">
-                <span class="step-num">Step 3</span>
-                <span class="step-title">Run development servers</span>
+                <span class="step-num">Configure</span>
+                <span class="step-title">API access</span>
               </div>
-              <pre><code>npm run dev:server   # http://127.0.0.1:3001
-npm run dev:client   # http://127.0.0.1:5173</code></pre>
+              <pre><code># Open Settings in the app, or edit:
+# %APPDATA%\com.chatnest.desktop\.env
+#
+# AI_API_KEY, AI_BASE_URL, AI_MODEL, …</code></pre>
+            </li>
+            <li class="panel step">
+              <div class="step-header">
+                <span class="step-num">Develop</span>
+                <span class="step-title">Run with hot reload</span>
+              </div>
+              <pre><code>npm run dev</code></pre>
             </li>
           </ol>
           <div class="notice" role="note">
-            <strong>Security:</strong> Chatterbox does not implement authentication. Deploy on localhost
-            or place the service behind your own network controls and reverse proxy policies.
+            <strong>Security:</strong> ChatNest is a single-user local desktop app. Report vulnerabilities via
+            <a href="https://github.com/Satan2049/chat-nest/blob/main/SECURITY.md">SECURITY.md</a>.
           </div>
         </section>
       </main>
 
       <footer class="site-footer">
-        <span>MIT License · Node.js 20+</span>
+        <span>MIT License · ChatNest v1.1.0 · Rust + Tauri 2</span>
         <span>
-          <a href="https://github.com/Satan2049/chatter-box">github.com/Satan2049/chatter-box</a>
+          <a href="https://github.com/Satan2049/chat-nest">GitHub</a>
+          ·
+          <a href="./TRUST.md">Trust</a>
+          ·
+          <a href="https://github.com/Satan2049/chat-nest/blob/main/README.md">README</a>
         </span>
       </footer>
     </div>
 
     <script>
       (function () {
-        var KEY = "chatterbox-theme";
+        var KEY = "chatnest-theme";
         var root = document.documentElement;
         var btn = document.getElementById("theme-toggle");
-
-        var preview = document.getElementById("app-preview");
 
         function apply(theme) {
           root.setAttribute("data-theme", theme);
           btn.textContent = theme === "dark" ? "Light mode" : "Dark mode";
           document.querySelector('meta[name="theme-color"]').content =
             theme === "dark" ? "#171f2f" : "#3f6fff";
-          if (preview) {
-            preview.src =
-              theme === "dark"
-                ? "./assets/app-preview-dark.svg"
-                : "./assets/app-preview.svg";
-          }
         }
 
         var saved = localStorage.getItem(KEY);

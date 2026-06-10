@@ -1,3 +1,4 @@
+import { errorMessage } from "../../../shared/lib/errorMessage";
 import { create } from "zustand";
 import type { PromptPreset } from "../types/prompt.types";
 import * as promptApi from "../services/promptApi";
@@ -43,7 +44,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
     } catch (e) {
       set({
         loading: false,
-        error: e instanceof Error ? e.message : "Failed to load presets"
+        error: errorMessage(e, "Failed to load presets")
       });
     }
   },
@@ -56,7 +57,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       return true;
     } catch (e) {
       set({
-        error: e instanceof Error ? e.message : "Failed to create preset"
+        error: errorMessage(e, "Failed to create preset")
       });
       return false;
     }
@@ -70,7 +71,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       return true;
     } catch (e) {
       set({
-        error: e instanceof Error ? e.message : "Failed to update preset"
+        error: errorMessage(e, "Failed to update preset")
       });
       return false;
     }
@@ -84,7 +85,7 @@ export const usePromptStore = create<PromptState>((set, get) => ({
       return true;
     } catch (e) {
       set({
-        error: e instanceof Error ? e.message : "Failed to delete preset"
+        error: errorMessage(e, "Failed to delete preset")
       });
       return false;
     }

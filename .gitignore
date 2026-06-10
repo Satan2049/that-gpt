@@ -8,3 +8,5 @@ server/data/chats/*.json
 server/data/prompts/*.json
 !server/data/chats/.gitkeep
 !server/data/prompts/.gitkeep
+src-tauri/target/
+release/

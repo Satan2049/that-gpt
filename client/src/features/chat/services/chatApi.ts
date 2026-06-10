@@ -1,61 +1,29 @@
+import { invoke } from "../../../shared/lib/tauriInvoke";
 import type { ChatMessage, Conversation, ConversationSummary } from "../types/chat.types";
 
-async function parseError(res: Response): Promise<string> {
-  const text = await res.text();
-  try {
-    const parsed = JSON.parse(text) as { error?: unknown };
-    if (typeof parsed.error === "string") return parsed.error;
-    if (parsed.error !== undefined) {
-      return typeof parsed.error === "object"
-        ? JSON.stringify(parsed.error)
-        : String(parsed.error);
-    }
-    return text || res.statusText;
-  } catch {
-    return text || res.statusText;
-  }
-}
-
 export async function apiListConversations(): Promise<ConversationSummary[]> {
-  const res = await fetch("/api/chat/conversations");
-  if (!res.ok) throw new Error(await parseError(res));
-  return res.json() as Promise<ConversationSummary[]>;
+  return invoke<ConversationSummary[]>("list_conversations");
 }
 
 export async function apiGetConversation(id: string): Promise<Conversation> {
-  const res = await fetch(`/api/chat/conversations/${encodeURIComponent(id)}`);
-  if (!res.ok) throw new Error(await parseError(res));
-  return res.json() as Promise<Conversation>;
+  return invoke<Conversation>("get_conversation", { id });
 }
 
 export async function apiCreateConversation(title?: string): Promise<Conversation> {
-  const res = await fetch("/api/chat/conversations", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(title ? { title } : {})
+  return invoke<Conversation>("create_conversation", {
+    body: title ? { title } : {}
   });
-  if (!res.ok) throw new Error(await parseError(res));
-  return res.json() as Promise<Conversation>;
 }
 
 export async function apiDeleteConversation(id: string): Promise<void> {
-  const res = await fetch(`/api/chat/conversations/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  if (!res.ok) throw new Error(await parseError(res));
+  await invoke("delete_conversation", { id });
 }
 
 export async function apiPatchConversation(
   id: string,
   patch: { title?: string; promptPresetId?: string | null }
 ): Promise<Conversation> {
-  const res = await fetch(`/api/chat/conversations/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch)
-  });
-  if (!res.ok) throw new Error(await parseError(res));
-  return res.json() as Promise<Conversation>;
+  return invoke<Conversation>("update_conversation", { id, body: patch });
 }
 
 export async function apiSendMessage(
@@ -66,18 +34,21 @@ export async function apiSendMessage(
     images?: Array<{ mimeType: string; base64: string }>;
   }
 ): Promise<{ assistantMessage: ChatMessage; conversation: Conversation }> {
-  const res = await fetch("/api/chat/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  return invoke<{ assistantMessage: ChatMessage; conversation: Conversation }>("send_message", {
+    body: {
       conversationId,
       message,
       ...(options?.promptPresetId !== undefined
         ? { promptPresetId: options.promptPresetId }
         : {}),
       ...(options?.images?.length ? { images: options.images } : {})
-    })
+    }
   });
-  if (!res.ok) throw new Error(await parseError(res));
-  return res.json() as Promise<{ assistantMessage: ChatMessage; conversation: Conversation }>;
+}
+
+export async function apiExportConversation(
+  id: string,
+  format: "json" | "markdown"
+): Promise<string> {
+  return invoke<string>("export_conversation", { id, format });
 }

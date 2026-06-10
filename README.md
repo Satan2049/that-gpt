@@ -1,179 +1,173 @@
 <div align="center">
 
-<img src="docs/assets/brand-mark.svg" alt="" width="40" height="40" />
+<img src="assets/logo.png" alt="ChatNest logo" width="96" height="96" />
 
-# Chatterbox
+# ChatNest
 
-**Self-hosted chat for OpenAI-compatible APIs**
+**Local-first desktop chat for OpenAI-compatible APIs**
 
-<p>
-  <a href="https://satan2049.github.io/chatter-box/">Website</a>
-  &nbsp;·&nbsp;
-  <a href="#quick-start">Quick start</a>
-  &nbsp;·&nbsp;
-  <a href="#features">Features</a>
-  &nbsp;·&nbsp;
-  <a href="#documentation">Docs</a>
-</p>
-
+[![Version](https://img.shields.io/badge/version-1.1.0-3f6fff?style=flat-square)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-3f6fff?style=flat-square)](LICENSE)
-[![Node](https://img.shields.io/badge/Node-%3E%3D20-3f6fff?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3f6fff?style=flat-square&logo=typescript&logoColor=white)](server/)
-[![React](https://img.shields.io/badge/React-Vite-3f6fff?style=flat-square&logo=react&logoColor=white)](client/)
-[![Fastify](https://img.shields.io/badge/Fastify-API-3f6fff?style=flat-square&logo=fastify&logoColor=white)](server/)
+[![Tauri](https://img.shields.io/badge/Tauri-2-3f6fff?style=flat-square&logo=tauri&logoColor=white)](src-tauri/)
+[![Rust](https://img.shields.io/badge/Rust-2021-3f6fff?style=flat-square&logo=rust&logoColor=white)](src-tauri/)
+[![React](https://img.shields.io/badge/React-18-3f6fff?style=flat-square&logo=react&logoColor=white)](client/)
+[![Platform](https://img.shields.io/badge/Platform-Windows-3f6fff?style=flat-square&logo=windows&logoColor=white)](#installation)
+
+[Features](#features) · [Screenshots](#screenshots) · [Installation](#installation) · [Development](#development) · [Build](#build) · [Changelog](CHANGELOG.md) · [Trust](#trust) · [Contributing](CONTRIBUTING.md)
+
+<img src="assets/banner.png" alt="ChatNest banner" width="100%" />
 
 </div>
 
-<br />
-
-<table>
-<tr>
-<td width="58%">
-
-### Overview
-
-Chatterbox is a local-first chat client and API proxy. The React UI handles conversations, prompt presets, and optional image attachments. A Fastify backend stores data as JSON and forwards requests to your configured provider.
-
-**Design goals:** keep provider credentials on the server, avoid database overhead, and support any OpenAI-compatible endpoint.
-
-</td>
-<td>
-
-<p align="center">
-  <img src="docs/assets/app-preview.svg" alt="Chatterbox interface preview" width="100%" />
-</p>
-
-<p align="center"><sub>Conversation sidebar · preset panel · message thread</sub></p>
-
-</td>
-</tr>
-</table>
-
 ---
+
+## Description
+
+ChatNest is a stable, open-source desktop chat client (v1.0). Conversations, prompt presets, and optional image attachments are handled in a React UI. A **Rust + Tauri** backend stores data as JSON on disk and proxies all model requests so your API key never enters the webview.
+
+**Design goals:** credentials stay in the desktop shell, no database overhead, any OpenAI-compatible endpoint.
 
 ## Features
 
-| Area | Details |
-|------|---------|
-| **Chat** | Persistent threads under `server/data/chats/` |
+| | |
+|---|---|
+| **Chat** | Persistent threads stored locally as JSON |
 | **Vision** | JPEG, PNG, WebP attachments with server-side validation |
-| **Presets** | Per-preset model, temperature, and system prompt |
-| **Theming** | Light / dark UI aligned with in-app CSS variables |
-| **Errors** | Structured handling for timeouts, rate limits, and auth failures |
+| **Presets** | Reusable system prompts with model, temperature, and token limits |
+| **Themes** | Light / dark UI with CSS variable design tokens |
+| **Reliability** | Retries, timeouts, and clear errors for provider failures |
+| **Settings UI** | API key, provider URL, model, prompts, timeout — all editable in-app |
+| **Streaming** | Assistant replies appear token-by-token |
+| **Export** | Download conversations as Markdown or JSON |
 
-## Architecture
+## Screenshots
 
+> Add captures to [`assets/screenshots/`](assets/screenshots/) before publishing.
+
+<table>
+<tr>
+<td width="33%"><img src="assets/screenshots/screenshot-chat.png" alt="Chat view" width="100%" /><br /><sub>Main chat</sub></td>
+<td width="33%"><img src="assets/screenshots/screenshot-presets.png" alt="Prompt presets" width="100%" /><br /><sub>Prompt presets</sub></td>
+<td width="33%"><img src="assets/screenshots/screenshot-dark.png" alt="Dark theme" width="100%" /><br /><sub>Dark theme</sub></td>
+</tr>
+</table>
+
+<p align="center">
+  <img src="assets/screenshots/demo.gif" alt="ChatNest demo" width="720" />
+  <br />
+  <sub>Demo GIF — replace with a short screen recording</sub>
+</p>
+
+## Installation
+
+### Download (recommended)
+
+1. Open [GitHub Releases](https://github.com/Satan2049/chat-nest/releases).
+2. Download **portable** `.exe` or **setup** installer for Windows x64.
+3. Verify checksums — see [docs/TRUST.md](docs/TRUST.md) and [`SHA256.txt`](SHA256.txt).
+4. *(Optional)* Review [VirusTotal reports](docs/TRUST.md#published-reports-v110) for the release binaries.
+
+### Configure API access
+
+Open **Settings** in the app (header) to set your API key, base URL, default model, system prompt, timeout, and retries. Settings are saved to:
+
+```text
+%APPDATA%\com.chatnest.desktop\.env
 ```
-Browser (React + Vite)
-        │  /api/*
-        ▼
-Fastify (TypeScript) ──► OpenAI-compatible provider
-        │
-        └── JSON files: server/data/chats/ · server/data/prompts/
+
+You can also edit that file manually — see [`src-tauri/.env.example`](src-tauri/.env.example):
+
+```env
+AI_API_KEY=your-key-here
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini
+AI_DEFAULT_SYSTEM_PROMPT=You are a helpful assistant.
+AI_REQUEST_TIMEOUT_MS=60000
+AI_MAX_RETRIES=2
 ```
 
-The browser never receives `AI_API_KEY`. All provider traffic is proxied through the backend.
+### Build from source
 
-## Quick start
-
-**Requirements:** Node.js 20+, API key for an OpenAI-compatible service.
+Requires Node.js 20+, Rust, and [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) on Windows.
 
 ```bash
-git clone https://github.com/Satan2049/chatter-box.git
-cd chatter-box
-
-npm install --prefix server
-npm install --prefix client
-
-cp server/.env.example server/.env
-# Set AI_API_KEY in server/.env
+git clone https://github.com/Satan2049/chat-nest.git
+cd chat-nest
+npm install
+npm run build
 ```
 
-```bash
-npm run dev:server   # API  → http://127.0.0.1:3001
-npm run dev:client   # UI   → http://127.0.0.1:5173
-```
-
-Open the UI, create a conversation, select a prompt preset, and send a message.
-
-## Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3001` | Server listen port |
-| `AI_API_KEY` | — | Provider API key (required) |
-| `AI_BASE_URL` | `https://api.openai.com/v1` | Compatible API base URL |
-| `AI_MODEL` | `gpt-4o-mini` | Default model identifier |
-| `AI_DEFAULT_SYSTEM_PROMPT` | *(empty)* | Fallback system prompt |
-| `AI_REQUEST_TIMEOUT_MS` | `60000` | Request timeout (ms) |
-| `AI_MAX_RETRIES` | `2` | Retries on transient errors |
-
-Template: [`server/.env.example`](server/.env.example)
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev:server` | API with hot reload |
-| `npm run dev:client` | Vite development server |
-| `npm run build:server` | Compile to `server/dist/` |
-| `npm run build:client` | Production UI build |
-| `npm run test` | Server unit tests |
-
-**Production:** `npm run build:server`, then `npm --prefix server run start` with `server/.env` in place.
-
-## Data layout
-
-```
-server/data/
-  chats/      one JSON file per conversation
-  prompts/    one JSON file per prompt preset
-```
-
-User-generated chat data is gitignored; only `.gitkeep` placeholders are tracked.
-
-## API
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/health` | Health check |
-| `GET/POST/PATCH/DELETE` | `/api/chat/conversations` | Conversation CRUD |
-| `POST` | `/api/chat/send` | Send message (optional images) |
-| `GET/POST/PUT/DELETE` | `/api/prompts` | Prompt preset CRUD |
-
-Contract reference: [`docs/master_plan.md`](docs/master_plan.md)
-
-## Documentation
-
-| Resource | Description |
-|----------|-------------|
-| [Project site](https://satan2049.github.io/chatter-box/) | Landing page (GitHub Pages, `/docs`) |
-| [`docs/master_plan.md`](docs/master_plan.md) | API and implementation specification |
-| [`docs/stages.md`](docs/stages.md) | Delivery stages and exit criteria |
-
-<details>
-<summary>Enable GitHub Pages</summary>
-
-1. Repository **Settings → Pages**
-2. Source: deploy from branch **`main`**, folder **`/docs`**
-3. Site URL: `https://<username>.github.io/chatter-box/`
-
-</details>
+Portable binary: `src-tauri/target/release/bundle/portable/ChatNest.exe`
 
 ## Development
 
 ```bash
-npm run test
-npm run build:server
-npm run build:client
+npm install
+npm run dev          # Tauri + Vite hot reload
+npm run test:rust    # Rust unit tests
+npm run build:client # Frontend only
 ```
 
-## Security
+Config template: [`src-tauri/.env.example`](src-tauri/.env.example)
 
-- Do not commit `server/.env` or production API keys.
-- **No built-in authentication** — restrict access via network policy or a reverse proxy.
-- Uploads are validated for MIME type, size, and count on the server.
+| Variable | Description |
+|----------|-------------|
+| `AI_API_KEY` | Provider API key (required) |
+| `AI_BASE_URL` | OpenAI-compatible base URL |
+| `AI_MODEL` | Default model id |
+| `AI_DEFAULT_SYSTEM_PROMPT` | Fallback system message for new chats |
+| `AI_REQUEST_TIMEOUT_MS` | Provider request timeout (ms) |
+| `AI_MAX_RETRIES` | Retry count for transient API errors |
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for pull request guidelines.
+
+## Build
+
+| Command | Output |
+|---------|--------|
+| `npm run build` | NSIS installer + portable EXE |
+| `npm run build:portable` | Portable EXE only |
+| `npm run release:package` | Stage `release/` folder with ZIPs |
+| `npm run release:hashes` | Generate `SHA256.txt` |
+
+Artifacts:
+
+```text
+src-tauri/target/release/bundle/portable/ChatNest.exe
+src-tauri/target/release/bundle/nsis/ChatNest_*_x64-setup.exe
+release/                                    # after release:package
+SHA256.txt                                  # after release:hashes
+```
+
+## Architecture
+
+```text
+React UI (Vite)
+      │  Tauri invoke
+      ▼
+Rust services ──► OpenAI-compatible API
+      │
+      └── JSON: %APPDATA%/com.chatnest.desktop/data/
+```
+
+Details: [`docs/repository-intelligence.md`](docs/repository-intelligence.md)
+
+## Tech stack
+
+| Layer | Technology |
+|-------|------------|
+| Desktop shell | [Tauri 2](https://v2.tauri.app/) |
+| Backend | Rust, Tokio, Reqwest, Serde |
+| Frontend | React 18, Vite, TypeScript, Zustand |
+| Storage | File-based JSON |
+| AI | OpenAI-compatible `/chat/completions` |
+
+## Trust
+
+- Verify downloads: [docs/TRUST.md](docs/TRUST.md)
+- Report security issues: [SECURITY.md](SECURITY.md)
+- Checksums: [`SHA256.txt`](SHA256.txt)
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © ChatNest contributors

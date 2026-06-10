@@ -1,9 +1,8 @@
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import {
-  MAX_IMAGE_BYTES,
-  MAX_IMAGES_PER_MESSAGE,
   isAllowedImageMime
 } from "../lib/imageAttachmentLimits";
+import { useImageLimits } from "../../settings/store/settingsStore";
 import { readFileAsBase64Data } from "../lib/readImageAttachment";
 import { useChatStore } from "../store/chatStore";
 
@@ -24,6 +23,8 @@ export function Composer() {
   const activeId = useChatStore((s) => s.activeConversationId);
   const sending = useChatStore((s) => s.sending);
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const { maxCount: maxImages, maxBytes: maxImageBytes } = useImageLimits();
+  const maxImageMb = (maxImageBytes / (1024 * 1024)).toFixed(0);
 
   pendingRef.current = pending;
 
@@ -58,16 +59,16 @@ export function Composer() {
     setPending((prev) => {
       let next = [...prev];
       for (const file of incoming) {
-        if (next.length >= MAX_IMAGES_PER_MESSAGE) {
-          setLocalError(`At most ${MAX_IMAGES_PER_MESSAGE} images per message.`);
+        if (next.length >= maxImages) {
+          setLocalError(`At most ${maxImages} images per message.`);
           break;
         }
         if (!isAllowedImageMime(file.type)) {
           setLocalError("Invalid image type. Use JPEG, PNG, or WebP.");
           continue;
         }
-        if (file.size > MAX_IMAGE_BYTES) {
-          setLocalError("Each image must be at most 5MB.");
+        if (file.size > maxImageBytes) {
+          setLocalError(`Each image must be at most ${maxImageMb}MB.`);
           continue;
         }
         next.push({
@@ -146,13 +147,13 @@ export function Composer() {
         aria-hidden="true"
         tabIndex={-1}
         onChange={onPickFiles}
-        disabled={disabled || pending.length >= MAX_IMAGES_PER_MESSAGE}
+        disabled={disabled || pending.length >= maxImages}
       />
       <div className="composer-row">
         <button
           type="button"
           className="composer-attach-btn"
-          disabled={disabled || pending.length >= MAX_IMAGES_PER_MESSAGE}
+          disabled={disabled || pending.length >= maxImages}
           onClick={() => fileInputRef.current?.click()}
         >
           Image

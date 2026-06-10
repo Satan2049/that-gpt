@@ -1,0 +1,11 @@
+# ChatNest SHA256 checksums
+# Product: ChatNest
+# Version: 1.0.0
+# Generated: pending — run `npm run release:verify` after `npm run build`
+#
+# Verify on Windows (PowerShell):
+#   Get-FileHash -Algorithm SHA256 <file>
+# See docs/TRUST.md for full instructions.
+
+38a8a1d0083c5014708c2584978452fbd52ef014308b86c87724067fc2302251  assets/banner.png
+6e87c9541f8bab8180bb571faec1d0b412c654e0407ecfded8de8268f436f53f  assets/logo.png
