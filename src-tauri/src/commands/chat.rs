@@ -90,6 +90,12 @@ pub async fn send_message(
         validate_uuid(preset_id, "promptPresetId")?;
     }
 
+    if let Some(ref attachments) = body.attachments {
+        if attachments.len() > 4 {
+            return Err(AppError::bad_request("At most 4 attachments per message").into());
+        }
+    }
+
     if let Some(ref images) = body.images {
         if images.len() > 4 {
             return Err(AppError::bad_request("At most 4 images per message").into());
@@ -103,9 +109,41 @@ pub async fn send_message(
         &body.message,
         body.prompt_preset_id,
         body.images,
+        body.attachments,
     )
     .await
     .map_err(String::from)
+}
+
+#[tauri::command]
+pub async fn regenerate_last_response(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    conversation_id: String,
+) -> Result<SendMessageResponse, String> {
+    validate_uuid(&conversation_id, "conversationId")?;
+    ChatService::regenerate_last_response(&state, &app, &conversation_id)
+        .await
+        .map_err(String::from)
+}
+
+#[tauri::command]
+pub async fn search_conversations(
+    state: State<'_, AppState>,
+    query: String,
+) -> Result<Vec<ConversationSummary>, String> {
+    ChatService::search_conversations(&state, &query)
+        .await
+        .map_err(String::from)
+}
+
+#[tauri::command]
+pub async fn cancel_generation(
+    state: State<'_, AppState>,
+    conversation_id: String,
+) -> Result<bool, String> {
+    validate_uuid(&conversation_id, "conversationId")?;
+    Ok(state.cancel_generation(&conversation_id))
 }
 
 #[tauri::command]

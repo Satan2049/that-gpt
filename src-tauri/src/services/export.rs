@@ -28,25 +28,42 @@ fn export_markdown(conversation: &Conversation) -> String {
     let mut lines = vec![format!("# {}\n", conversation.title)];
 
     for message in &conversation.messages {
-        if !matches!(message.role, MessageRole::User | MessageRole::Assistant) {
+        if !matches!(
+            message.role,
+            MessageRole::User | MessageRole::Assistant | MessageRole::Tool
+        ) {
             continue;
         }
 
         let role = match message.role {
             MessageRole::User => "User",
             MessageRole::Assistant => "Assistant",
+            MessageRole::Tool => "Tool",
             MessageRole::System => "System",
         };
 
         lines.push(format!("## {role} — {}\n", message.created_at));
 
+        if message.tool_name.is_some() {
+            lines.push(format!(
+                "*Tool: {}*\n",
+                message.tool_name.as_deref().unwrap_or("unknown")
+            ));
+        }
+
         if message
             .images
             .as_ref()
             .is_some_and(|images| !images.is_empty())
+            || message
+                .attachments
+                .as_ref()
+                .is_some_and(|items| !items.is_empty())
         {
-            let count = message.images.as_ref().map(|i| i.len()).unwrap_or(0);
-            lines.push(format!("*({count} image attachment(s) omitted from export)*\n"));
+            let image_count = message.images.as_ref().map(|i| i.len()).unwrap_or(0);
+            let att_count = message.attachments.as_ref().map(|i| i.len()).unwrap_or(0);
+            let count = image_count + att_count;
+            lines.push(format!("*({count} attachment(s) omitted from export)*\n"));
         }
 
         if !message.content.is_empty() {
@@ -76,6 +93,10 @@ mod tests {
                 content: "Hello".to_string(),
                 created_at: "2026-01-01T00:00:00.000Z".to_string(),
                 images: None,
+                attachments: None,
+                tool_calls: None,
+                tool_call_id: None,
+                tool_name: None,
             }],
             prompt_preset_id: None,
             created_at: "2026-01-01T00:00:00.000Z".to_string(),

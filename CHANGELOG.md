@@ -5,6 +5,38 @@ All notable changes to ChatNest are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-06-16
+
+Major release focused on look-and-feel, mobile-ready layout, and agent features.
+
+### Added
+
+- **Design system** — Expanded tokens (spacing, radius, shadows, semantic colors) and Inter font loading
+- **Branding** — In-app logo mark and refreshed shell layout
+- **Mobile-ready sidebar** — Slide-over drawer with backdrop on narrow viewports (prep for Tauri mobile)
+- **Markdown rendering** — Assistant messages render GFM markdown with syntax-highlighted code blocks
+- **Stop generation** — Cancel in-flight streaming from the composer
+- **Tool calling** — Agent loop with image, audio, and attachment analysis tools
+- **Multimodal attachments** — Images, audio, text files, and PDFs
+- **Regenerate** — Re-run the last assistant response
+- **Copy** — Copy full messages or individual code blocks
+- **Rename & search** — Rename conversations; debounced sidebar search
+- **Optional image/audio models** — Separate model settings for vision and transcription
+
+### Changed
+
+- Composer uses a multi-line textarea (Enter to send, Shift+Enter for newline)
+- Floating composer card with elevated surface styling
+- Preset default label reflects in-app settings instead of `.env`
+- Theme toggle moved to a compact header control; full theme choice remains in Settings
+
+### Fixed
+
+- Duplicate streaming cursor while content was already rendering
+- Delete conversation now asks for confirmation
+- Settings modal closes on Escape
+- Removed unused `imageAttachmentLimits` module
+
 ## [1.1.0] - 2026-06-10
 
 Feature release focused on daily-use polish.

@@ -1,19 +1,35 @@
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import {
-  isAllowedImageMime
-} from "../lib/imageAttachmentLimits";
+  type ChangeEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState
+} from "react";
+import {
+  attachmentKindFromMime,
+  FILE_INPUT_ACCEPT,
+  isAllowedAttachmentMime,
+  MAX_ATTACHMENTS_PER_MESSAGE,
+  maxBytesForMime
+} from "../lib/attachmentLimits";
 import { useImageLimits } from "../../settings/store/settingsStore";
-import { readFileAsBase64Data } from "../lib/readImageAttachment";
+import { readFileAsBase64Data } from "../lib/readFileAttachment";
 import { useChatStore } from "../store/chatStore";
 
 type PendingAttachment = {
   key: string;
   file: File;
-  previewUrl: string;
+  previewUrl?: string;
+  kind: "image" | "audio" | "text" | "pdf";
 };
+
+const TEXTAREA_MIN_HEIGHT_PX = 42;
+const TEXTAREA_MAX_HEIGHT_PX = 200;
 
 export function Composer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingRef = useRef<PendingAttachment[]>([]);
   const [text, setText] = useState("");
   const [pending, setPending] = useState<PendingAttachment[]>([]);
@@ -23,16 +39,29 @@ export function Composer() {
   const activeId = useChatStore((s) => s.activeConversationId);
   const sending = useChatStore((s) => s.sending);
   const sendMessage = useChatStore((s) => s.sendMessage);
-  const { maxCount: maxImages, maxBytes: maxImageBytes } = useImageLimits();
-  const maxImageMb = (maxImageBytes / (1024 * 1024)).toFixed(0);
+  const stopGeneration = useChatStore((s) => s.stopGeneration);
+  const { maxCount: maxAttachments } = useImageLimits();
 
   pendingRef.current = pending;
 
   useEffect(() => {
     return () => {
-      pendingRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+      pendingRef.current.forEach((p) => {
+        if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+      });
     };
   }, []);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const nextHeight = Math.min(
+      Math.max(el.scrollHeight, TEXTAREA_MIN_HEIGHT_PX),
+      TEXTAREA_MAX_HEIGHT_PX
+    );
+    el.style.height = `${nextHeight}px`;
+  }, [text]);
 
   const disabled = !activeId || sending || preparing;
   const canSubmit =
@@ -44,7 +73,7 @@ export function Composer() {
   const removePending = (key: string) => {
     setPending((prev) => {
       const item = prev.find((p) => p.key === key);
-      if (item) {
+      if (item?.previewUrl) {
         URL.revokeObjectURL(item.previewUrl);
       }
       return prev.filter((p) => p.key !== key);
@@ -56,25 +85,34 @@ export function Composer() {
     setLocalError(null);
     if (!incoming.length) return;
 
+    const limit = Math.min(maxAttachments, MAX_ATTACHMENTS_PER_MESSAGE);
+
     setPending((prev) => {
       let next = [...prev];
       for (const file of incoming) {
-        if (next.length >= maxImages) {
-          setLocalError(`At most ${maxImages} images per message.`);
+        if (next.length >= limit) {
+          setLocalError(`At most ${limit} attachments per message.`);
           break;
         }
-        if (!isAllowedImageMime(file.type)) {
-          setLocalError("Invalid image type. Use JPEG, PNG, or WebP.");
+        if (!isAllowedAttachmentMime(file.type)) {
+          setLocalError(
+            "Unsupported file type. Use images, audio, PDF, or text files."
+          );
           continue;
         }
-        if (file.size > maxImageBytes) {
-          setLocalError(`Each image must be at most ${maxImageMb}MB.`);
+        const maxBytes = maxBytesForMime(file.type);
+        if (file.size > maxBytes) {
+          const maxMb = (maxBytes / (1024 * 1024)).toFixed(file.type.startsWith("text/") ? 1 : 0);
+          setLocalError(`File too large (max ${maxMb}MB for this type).`);
           continue;
         }
+        const kind = attachmentKindFromMime(file.type);
+        if (!kind) continue;
         next.push({
           key: crypto.randomUUID(),
           file,
-          previewUrl: URL.createObjectURL(file)
+          kind,
+          previewUrl: kind === "image" ? URL.createObjectURL(file) : undefined
         });
       }
       return next;
@@ -82,8 +120,7 @@ export function Composer() {
     e.target.value = "";
   };
 
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const submitMessage = async () => {
     if (!canSubmit || !activeId) return;
 
     const trimmed = text.trim();
@@ -92,18 +129,21 @@ export function Composer() {
     setLocalError(null);
     setPreparing(true);
     try {
-      const images =
+      const payloads =
         attachments.length > 0
           ? await Promise.all(
               attachments.map(async (a) => ({
                 mimeType: a.file.type,
-                base64: await readFileAsBase64Data(a.file)
+                base64: await readFileAsBase64Data(a.file),
+                filename: a.file.name
               }))
             )
           : undefined;
 
-      await sendMessage(trimmed, images);
-      attachments.forEach((a) => URL.revokeObjectURL(a.previewUrl));
+      await sendMessage(trimmed, payloads);
+      attachments.forEach((a) => {
+        if (a.previewUrl) URL.revokeObjectURL(a.previewUrl);
+      });
       setPending([]);
       setText("");
     } finally {
@@ -111,8 +151,20 @@ export function Composer() {
     }
   };
 
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void submitMessage();
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void submitMessage();
+    }
+  };
+
   return (
-    <form className="composer composer-form" onSubmit={(ev) => void onSubmit(ev)}>
+    <form className="composer composer-form" onSubmit={onSubmit}>
       {localError ? (
         <div className="composer-local-error" role="status">
           {localError}
@@ -123,12 +175,18 @@ export function Composer() {
         <div className="composer-attachments">
           {pending.map((p) => (
             <div key={p.key} className="attachment-chip">
-              <img src={p.previewUrl} alt="" className="attachment-chip-thumb" />
+              {p.kind === "image" && p.previewUrl ? (
+                <img src={p.previewUrl} alt="" className="attachment-chip-thumb" />
+              ) : (
+                <span className="attachment-chip-label" title={p.file.name}>
+                  {p.kind === "audio" ? "🎵" : p.kind === "pdf" ? "📕" : "📄"} {p.file.name}
+                </span>
+              )}
               <button
                 type="button"
                 className="attachment-chip-remove"
                 disabled={disabled}
-                aria-label="Remove image"
+                aria-label="Remove attachment"
                 onClick={() => removePending(p.key)}
               >
                 ×
@@ -141,37 +199,51 @@ export function Composer() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={FILE_INPUT_ACCEPT}
         multiple
         className="composer-file-input"
         aria-hidden="true"
         tabIndex={-1}
         onChange={onPickFiles}
-        disabled={disabled || pending.length >= maxImages}
+        disabled={disabled || pending.length >= maxAttachments}
       />
       <div className="composer-row">
         <button
           type="button"
           className="composer-attach-btn"
-          disabled={disabled || pending.length >= maxImages}
+          disabled={disabled || pending.length >= maxAttachments}
           onClick={() => fileInputRef.current?.click()}
         >
-          Image
+          Attach
         </button>
-        <input
-          type="text"
-          className="composer-text-input"
+        <textarea
+          ref={textareaRef}
+          className="composer-textarea"
           value={text}
           onChange={(ev) => setText(ev.target.value)}
+          onKeyDown={onKeyDown}
           placeholder={
-            activeId ? "Message or attach images…" : "Select or create a conversation"
+            activeId
+              ? "Message… (Enter to send, Shift+Enter for newline)"
+              : "Select or create a conversation"
           }
           disabled={disabled}
           autoComplete="off"
+          rows={1}
         />
-        <button type="submit" disabled={!canSubmit}>
-          {preparing ? "Preparing…" : sending ? "Sending…" : "Send"}
-        </button>
+        {sending ? (
+          <button
+            type="button"
+            className="composer-stop-btn"
+            onClick={() => void stopGeneration()}
+          >
+            Stop
+          </button>
+        ) : (
+          <button type="submit" disabled={!canSubmit}>
+            {preparing ? "Preparing…" : "Send"}
+          </button>
+        )}
       </div>
     </form>
   );

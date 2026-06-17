@@ -1,5 +1,5 @@
 import { invoke } from "../../../shared/lib/tauriInvoke";
-import type { ChatMessage, Conversation, ConversationSummary } from "../types/chat.types";
+import type { ChatMessage, Conversation, ConversationSummary, PendingAttachmentPayload } from "../types/chat.types";
 
 export async function apiListConversations(): Promise<ConversationSummary[]> {
   return invoke<ConversationSummary[]>("list_conversations");
@@ -26,22 +26,43 @@ export async function apiPatchConversation(
   return invoke<Conversation>("update_conversation", { id, body: patch });
 }
 
+export async function apiRegenerateLastResponse(
+  conversationId: string
+): Promise<{ assistantMessage?: ChatMessage; conversation: Conversation }> {
+  return invoke<{ assistantMessage?: ChatMessage; conversation: Conversation }>(
+    "regenerate_last_response",
+    { conversationId }
+  );
+}
+
+export async function apiSearchConversations(
+  query: string
+): Promise<ConversationSummary[]> {
+  return invoke<ConversationSummary[]>("search_conversations", { query });
+}
+
+export async function apiCancelGeneration(conversationId: string): Promise<boolean> {
+  return invoke<boolean>("cancel_generation", { conversationId });
+}
+
 export async function apiSendMessage(
   conversationId: string,
   message: string,
   options?: {
     promptPresetId?: string | null;
     images?: Array<{ mimeType: string; base64: string }>;
+    attachments?: PendingAttachmentPayload[];
   }
-): Promise<{ assistantMessage: ChatMessage; conversation: Conversation }> {
-  return invoke<{ assistantMessage: ChatMessage; conversation: Conversation }>("send_message", {
+): Promise<{ assistantMessage?: ChatMessage; conversation: Conversation }> {
+  return invoke<{ assistantMessage?: ChatMessage; conversation: Conversation }>("send_message", {
     body: {
       conversationId,
       message,
       ...(options?.promptPresetId !== undefined
         ? { promptPresetId: options.promptPresetId }
         : {}),
-      ...(options?.images?.length ? { images: options.images } : {})
+      ...(options?.images?.length ? { images: options.images } : {}),
+      ...(options?.attachments?.length ? { attachments: options.attachments } : {})
     }
   });
 }

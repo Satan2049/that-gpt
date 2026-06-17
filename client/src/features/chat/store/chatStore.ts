@@ -1,7 +1,7 @@
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { conversationExportFilename, downloadTextFile } from "../../../shared/lib/downloadTextFile";
 import { create } from "zustand";
-import type { Conversation, ConversationSummary } from "../types/chat.types";
+import type { Conversation, ConversationSummary, PendingAttachmentPayload } from "../types/chat.types";
 import * as chatApi from "../services/chatApi";
 
 type StreamStartPayload = {
@@ -15,6 +15,32 @@ type StreamChunkPayload = {
   delta: string;
 };
 
+type StreamCancelledPayload = {
+  conversationId: string;
+  messageId: string;
+};
+
+type ToolCallPayload = {
+  conversationId: string;
+  toolCallId: string;
+  name: string;
+  arguments: string;
+};
+
+type ToolResultPayload = {
+  conversationId: string;
+  toolCallId: string;
+  name: string;
+  content: string;
+};
+
+export type ToolActivityItem = {
+  id: string;
+  kind: "call" | "result";
+  name: string;
+  detail: string;
+};
+
 type ChatState = {
   summaries: ConversationSummary[];
   activeConversationId: string | null;
@@ -23,9 +49,12 @@ type ChatState = {
   loadingConversation: boolean;
   sending: boolean;
   streamingMessageId: string | null;
+  toolActivity: ToolActivityItem[];
   exporting: boolean;
   error: string | null;
+  searchQuery: string;
   loadConversations: () => Promise<void>;
+  searchConversations: (query: string) => Promise<void>;
   selectConversation: (id: string) => Promise<void>;
   createConversation: () => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
@@ -33,13 +62,16 @@ type ChatState = {
     title?: string;
     promptPresetId?: string | null;
   }) => Promise<void>;
-  sendMessage: (
-    text: string,
-    images?: Array<{ mimeType: string; base64: string }>
-  ) => Promise<void>;
+  renameConversation: (id: string, title: string) => Promise<void>;
+  sendMessage: (text: string, attachments?: PendingAttachmentPayload[]) => Promise<void>;
+  regenerateLastResponse: () => Promise<void>;
+  stopGeneration: () => Promise<void>;
   exportActiveConversation: (format: "json" | "markdown") => Promise<void>;
   onStreamStart: (payload: StreamStartPayload) => void;
   onStreamChunk: (payload: StreamChunkPayload) => void;
+  onStreamCancelled: (payload: StreamCancelledPayload) => void;
+  onToolCall: (payload: ToolCallPayload) => void;
+  onToolResult: (payload: ToolResultPayload) => void;
   clearError: () => void;
 };
 
@@ -51,6 +83,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadingConversation: false,
   sending: false,
   streamingMessageId: null,
+  toolActivity: [],
+  searchQuery: "",
   exporting: false,
   error: null,
 
@@ -104,11 +138,58 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
   },
 
+  onStreamCancelled: ({ conversationId, messageId }) => {
+    set((state) => {
+      if (state.activeConversationId !== conversationId || !state.activeConversation) {
+        return state;
+      }
+
+      return {
+        streamingMessageId: null,
+        activeConversation: {
+          ...state.activeConversation,
+          messages: state.activeConversation.messages.filter(
+            (message) => !(message.id === messageId && message.content === "")
+          )
+        }
+      };
+    });
+  },
+
+  onToolCall: ({ conversationId, toolCallId, name, arguments: args }) => {
+    set((state) => {
+      if (state.activeConversationId !== conversationId) return state;
+      return {
+        toolActivity: [
+          ...state.toolActivity,
+          { id: toolCallId, kind: "call", name, detail: args }
+        ]
+      };
+    });
+  },
+
+  onToolResult: ({ conversationId, toolCallId, name, content }) => {
+    set((state) => {
+      if (state.activeConversationId !== conversationId) return state;
+      return {
+        toolActivity: [
+          ...state.toolActivity,
+          {
+            id: `${toolCallId}-result`,
+            kind: "result",
+            name,
+            detail: content.length > 240 ? `${content.slice(0, 240)}…` : content
+          }
+        ]
+      };
+    });
+  },
+
   loadConversations: async () => {
     set({ loadingList: true, error: null });
     try {
       const summaries = await chatApi.apiListConversations();
-      set({ summaries, loadingList: false });
+      set({ summaries, loadingList: false, searchQuery: "" });
       const { activeConversationId } = get();
       if (!activeConversationId && summaries.length > 0) {
         await get().selectConversation(summaries[0].id);
@@ -117,6 +198,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({
         loadingList: false,
         error: errorMessage(e, "Failed to load conversations")
+      });
+    }
+  },
+
+  searchConversations: async (query) => {
+    set({ loadingList: true, error: null, searchQuery: query });
+    try {
+      const summaries = await chatApi.apiSearchConversations(query);
+      set({ summaries, loadingList: false });
+    } catch (e) {
+      set({
+        loadingList: false,
+        error: errorMessage(e, "Search failed")
       });
     }
   },
@@ -191,7 +285,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ error: null });
     try {
       const conversation = await chatApi.apiPatchConversation(id, patch);
-      const summaries = await chatApi.apiListConversations();
+      const summaries = get().searchQuery.trim()
+        ? await chatApi.apiSearchConversations(get().searchQuery)
+        : await chatApi.apiListConversations();
       set({
         activeConversation: conversation,
         summaries
@@ -203,25 +299,64 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  sendMessage: async (text, images) => {
+  renameConversation: async (id, title) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+
+    set({ error: null });
+    try {
+      const conversation = await chatApi.apiPatchConversation(id, { title: trimmed });
+      const summaries = get().searchQuery.trim()
+        ? await chatApi.apiSearchConversations(get().searchQuery)
+        : await chatApi.apiListConversations();
+      set((state) => ({
+        summaries,
+        activeConversation:
+          state.activeConversationId === id ? conversation : state.activeConversation
+      }));
+    } catch (e) {
+      set({
+        error: errorMessage(e, "Failed to rename conversation")
+      });
+    }
+  },
+
+  sendMessage: async (text, attachments) => {
     const trimmed = text.trim();
     const { activeConversationId, activeConversation } = get();
-    if ((!trimmed && !(images?.length ?? 0)) || !activeConversationId || !activeConversation) {
+    if ((!trimmed && !(attachments?.length ?? 0)) || !activeConversationId || !activeConversation) {
       return;
     }
 
     const optimisticUserId = crypto.randomUUID();
+    const imageAttachments = attachments?.filter((a) => a.mimeType.startsWith("image/"));
     const optimisticUser = {
       id: optimisticUserId,
       conversationId: activeConversationId,
       role: "user" as const,
       content: trimmed,
       createdAt: new Date().toISOString(),
-      ...(images?.length
+      ...(imageAttachments?.length
         ? {
-            images: images.map((img) => ({
-              mimeType: img.mimeType as "image/jpeg" | "image/png" | "image/webp",
+            images: imageAttachments.map((img) => ({
+              mimeType: img.mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
               base64: img.base64
+            }))
+          }
+        : {}),
+      ...(attachments?.length
+        ? {
+            attachments: attachments.map((a) => ({
+              kind: a.mimeType.startsWith("image/")
+                ? ("image" as const)
+                : a.mimeType.startsWith("audio/")
+                  ? ("audio" as const)
+                  : a.mimeType === "application/pdf"
+                    ? ("pdf" as const)
+                    : ("text" as const),
+              mimeType: a.mimeType,
+              base64: a.base64,
+              filename: a.filename
             }))
           }
         : {})
@@ -230,6 +365,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       sending: true,
       streamingMessageId: null,
+      toolActivity: [],
       error: null,
       activeConversation: {
         ...activeConversation,
@@ -239,19 +375,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     try {
       const result = await chatApi.apiSendMessage(activeConversationId, trimmed, {
-        ...(images?.length ? { images } : {})
+        ...(attachments?.length ? { attachments } : {})
       });
       const summaries = await chatApi.apiListConversations();
       set({
         activeConversation: result.conversation,
         sending: false,
         streamingMessageId: null,
+        toolActivity: [],
         summaries
       });
     } catch (e) {
       set((state) => ({
         sending: false,
         streamingMessageId: null,
+        toolActivity: [],
         error: errorMessage(e, "Failed to send message"),
         activeConversation: state.activeConversation
           ? {
@@ -262,6 +400,66 @@ export const useChatStore = create<ChatState>((set, get) => ({
             }
           : null
       }));
+    }
+  },
+
+  regenerateLastResponse: async () => {
+    const { activeConversationId, sending } = get();
+    if (!activeConversationId || sending) return;
+
+    set({
+      sending: true,
+      streamingMessageId: null,
+      toolActivity: [],
+      error: null,
+      activeConversation: (() => {
+        const conv = get().activeConversation;
+        if (!conv) return conv;
+        let lastUserIdx = -1;
+        for (let i = conv.messages.length - 1; i >= 0; i -= 1) {
+          if (conv.messages[i].role === "user") {
+            lastUserIdx = i;
+            break;
+          }
+        }
+        if (lastUserIdx < 0) return conv;
+        return {
+          ...conv,
+          messages: conv.messages.slice(0, lastUserIdx + 1)
+        };
+      })()
+    });
+
+    try {
+      const result = await chatApi.apiRegenerateLastResponse(activeConversationId);
+      const summaries = await chatApi.apiListConversations();
+      set({
+        activeConversation: result.conversation,
+        sending: false,
+        streamingMessageId: null,
+        toolActivity: [],
+        summaries
+      });
+    } catch (e) {
+      set({
+        sending: false,
+        streamingMessageId: null,
+        toolActivity: [],
+        error: errorMessage(e, "Failed to regenerate response")
+      });
+    }
+  },
+
+  stopGeneration: async () => {
+    const { activeConversationId, sending } = get();
+    if (!activeConversationId || !sending) return;
+
+    try {
+      await chatApi.apiCancelGeneration(activeConversationId);
+    } catch (e) {
+      set({
+        error: errorMessage(e, "Failed to stop generation")
+      });
     }
   },
 

@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="ChatNest logo" width="96" height="96" />
+<img src="assets/logo.svg" alt="ChatNest logo" width="96" height="96" />
 
 # ChatNest
 
 **Local-first desktop chat for OpenAI-compatible APIs**
 
-[![Version](https://img.shields.io/badge/version-1.1.0-3f6fff?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.0-3f6fff?style=flat-square)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-3f6fff?style=flat-square)](LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-2-3f6fff?style=flat-square&logo=tauri&logoColor=white)](src-tauri/)
 [![Rust](https://img.shields.io/badge/Rust-2021-3f6fff?style=flat-square&logo=rust&logoColor=white)](src-tauri/)
@@ -23,7 +23,7 @@
 
 ## Description
 
-ChatNest is a stable, open-source desktop chat client (v1.0). Conversations, prompt presets, and optional image attachments are handled in a React UI. A **Rust + Tauri** backend stores data as JSON on disk and proxies all model requests so your API key never enters the webview.
+ChatNest is a stable, open-source desktop chat client (v2). Conversations, prompt presets, and multimodal attachments are handled in a React UI. A **Rust + Tauri** backend stores data as JSON on disk and proxies all model requests so your API key never enters the webview.
 
 **Design goals:** credentials stay in the desktop shell, no database overhead, any OpenAI-compatible endpoint.
 
@@ -121,6 +121,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for pull request guidelines.
 
 ## Build
 
+### Windows desktop
+
 | Command | Output |
 |---------|--------|
 | `npm run build` | NSIS installer + portable EXE |
@@ -136,6 +138,43 @@ src-tauri/target/release/bundle/nsis/ChatNest_*_x64-setup.exe
 release/                                    # after release:package
 SHA256.txt                                  # after release:hashes
 ```
+
+### Android (Tauri mobile)
+
+**Prerequisites:** [Android Studio](https://developer.android.com/studio), Android SDK, NDK, and Rust Android targets (`rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android`).
+
+One-time setup:
+
+```bash
+npm install
+npm run android:init    # creates src-tauri/gen/android/
+```
+
+Development (device or emulator):
+
+```bash
+npm run android:dev
+```
+
+Release APK/AAB:
+
+```bash
+npm run android:build
+```
+
+Outputs land under `src-tauri/gen/android/app/build/outputs/`.
+
+Platform config: [`src-tauri/tauri.android.conf.json`](src-tauri/tauri.android.conf.json) (bundle id `com.chatnest.app`).
+
+### iOS (macOS only)
+
+```bash
+npm run ios:init
+npm run ios:dev
+npm run ios:build
+```
+
+Requires Xcode on macOS. Config: [`src-tauri/tauri.ios.conf.json`](src-tauri/tauri.ios.conf.json).
 
 ## Architecture
 

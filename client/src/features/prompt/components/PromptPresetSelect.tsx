@@ -20,7 +20,7 @@ export function PromptPresetSelect() {
           });
         }}
       >
-        <option value="">Default (env)</option>
+        <option value="">Default (settings)</option>
         {presets.map((preset) => (
           <option key={preset.id} value={preset.id}>
             {preset.name}

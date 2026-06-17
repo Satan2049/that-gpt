@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, RwLock};
 
 use reqwest::Client;
 
@@ -17,6 +18,8 @@ pub struct AppConfig {
     pub ai_api_key: String,
     pub ai_base_url: String,
     pub ai_model: String,
+    pub ai_image_model: String,
+    pub ai_audio_model: String,
     pub ai_default_system_prompt: String,
     pub ai_request_timeout_ms: u64,
     pub ai_max_retries: u32,
@@ -34,6 +37,8 @@ impl AppConfig {
             ai_base_url: std::env::var("AI_BASE_URL")
                 .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string()),
             ai_model: std::env::var("AI_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string()),
+            ai_image_model: std::env::var("AI_IMAGE_MODEL").unwrap_or_default(),
+            ai_audio_model: std::env::var("AI_AUDIO_MODEL").unwrap_or_default(),
             ai_default_system_prompt: std::env::var("AI_DEFAULT_SYSTEM_PROMPT")
                 .unwrap_or_else(|_| DEFAULT_SYSTEM_PROMPT.to_string()),
             ai_request_timeout_ms: std::env::var("AI_REQUEST_TIMEOUT_MS")
@@ -75,6 +80,8 @@ impl AppConfig {
             ai_api_key: body.ai_api_key.trim().to_string(),
             ai_base_url,
             ai_model,
+            ai_image_model: body.ai_image_model.trim().to_string(),
+            ai_audio_model: body.ai_audio_model.trim().to_string(),
             ai_default_system_prompt: body.ai_default_system_prompt,
             ai_request_timeout_ms: body.ai_request_timeout_ms,
             ai_max_retries: body.ai_max_retries,
@@ -92,12 +99,16 @@ impl AppConfig {
              AI_API_KEY={}\n\
              AI_BASE_URL={}\n\
              AI_MODEL={}\n\
+             AI_IMAGE_MODEL={}\n\
+             AI_AUDIO_MODEL={}\n\
              AI_DEFAULT_SYSTEM_PROMPT={}\n\
              AI_REQUEST_TIMEOUT_MS={}\n\
              AI_MAX_RETRIES={}\n",
             escape_env_value(&self.ai_api_key),
             escape_env_value(&self.ai_base_url),
             escape_env_value(&self.ai_model),
+            escape_env_value(&self.ai_image_model),
+            escape_env_value(&self.ai_audio_model),
             escape_env_value(&self.ai_default_system_prompt),
             self.ai_request_timeout_ms,
             self.ai_max_retries,
@@ -136,12 +147,18 @@ fn build_http_client(timeout_ms: u64) -> Result<Client, AppError> {
         .map_err(|e| AppError::Internal(format!("Failed to build HTTP client: {e}")))
 }
 
+struct ActiveGeneration {
+    conversation_id: String,
+    cancel: Arc<AtomicBool>,
+}
+
 #[derive(Clone)]
 pub struct AppState {
     pub config_dir: PathBuf,
     pub data_dir: PathBuf,
     config: std::sync::Arc<RwLock<AppConfig>>,
     http: std::sync::Arc<RwLock<Client>>,
+    active_generation: Arc<Mutex<Option<ActiveGeneration>>>,
 }
 
 impl AppState {
@@ -162,6 +179,46 @@ impl AppState {
 
     pub fn snapshot_http(&self) -> Client {
         self.http.read().expect("http lock poisoned").clone()
+    }
+
+    pub fn begin_generation(&self, conversation_id: &str) -> Arc<AtomicBool> {
+        let cancel = Arc::new(AtomicBool::new(false));
+        let mut guard = self
+            .active_generation
+            .lock()
+            .expect("active generation lock poisoned");
+        *guard = Some(ActiveGeneration {
+            conversation_id: conversation_id.to_string(),
+            cancel: cancel.clone(),
+        });
+        cancel
+    }
+
+    pub fn cancel_generation(&self, conversation_id: &str) -> bool {
+        let guard = self
+            .active_generation
+            .lock()
+            .expect("active generation lock poisoned");
+        if let Some(active) = guard.as_ref() {
+            if active.conversation_id == conversation_id {
+                active.cancel.store(true, Ordering::Relaxed);
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn finish_generation(&self, conversation_id: &str) {
+        let mut guard = self
+            .active_generation
+            .lock()
+            .expect("active generation lock poisoned");
+        if guard
+            .as_ref()
+            .is_some_and(|active| active.conversation_id == conversation_id)
+        {
+            *guard = None;
+        }
     }
 
     pub fn update_settings(&self, body: UpdateSettingsBody) -> Result<AppConfig, AppError> {
@@ -193,6 +250,8 @@ mod tests {
             ai_api_key: "key".to_string(),
             ai_base_url: "not-a-url".to_string(),
             ai_model: "gpt-4o-mini".to_string(),
+            ai_image_model: String::new(),
+            ai_audio_model: String::new(),
             ai_default_system_prompt: String::new(),
             ai_request_timeout_ms: 60_000,
             ai_max_retries: 2,
@@ -209,6 +268,8 @@ mod tests {
             ai_api_key: "sk-test".to_string(),
             ai_base_url: "https://api.openai.com/v1".to_string(),
             ai_model: "gpt-4o-mini".to_string(),
+            ai_image_model: "gpt-4o".to_string(),
+            ai_audio_model: "whisper-1".to_string(),
             ai_default_system_prompt: "Line one\nLine two".to_string(),
             ai_request_timeout_ms: 30_000,
             ai_max_retries: 1,
@@ -218,6 +279,7 @@ mod tests {
         let loaded = AppConfig::load(&dir);
         assert_eq!(loaded.ai_api_key, "sk-test");
         assert_eq!(loaded.ai_default_system_prompt, "Line one\nLine two");
+        assert_eq!(loaded.ai_image_model, "gpt-4o");
         assert_eq!(loaded.ai_request_timeout_ms, 30_000);
 
         let _ = std::fs::remove_dir_all(dir);
@@ -235,5 +297,6 @@ pub fn init_state(app_data_dir: PathBuf) -> AppState {
         data_dir,
         config: std::sync::Arc::new(RwLock::new(config)),
         http: std::sync::Arc::new(RwLock::new(http)),
+        active_generation: Arc::new(Mutex::new(None)),
     }
 }

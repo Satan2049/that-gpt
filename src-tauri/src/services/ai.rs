@@ -1,10 +1,13 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
 use futures_util::StreamExt;
 use reqwest::Client;
 
 use crate::config::{AppConfig, AppState};
 use crate::error::AppError;
 use crate::models::ai::{
-    build_completion_request_body, parse_completion_content, parse_stream_data_payload,
+    build_completion_request_body, parse_completion_response, parse_stream_data_payload, ToolCall,
 };
 use crate::models::api::{ConnectionTestResult, ModelsListResult};
 use crate::models::ChatCompletionMessage;
@@ -265,6 +268,17 @@ pub async fn test_api_connection(state: &AppState) -> Result<ConnectionTestResul
     }
 }
 
+fn is_cancelled(cancel: Option<&Arc<AtomicBool>>) -> bool {
+    cancel.is_some_and(|flag| flag.load(Ordering::Relaxed))
+}
+
+#[derive(Debug, Clone)]
+pub struct CompletionResult {
+    pub content: String,
+    pub tool_calls: Vec<ToolCall>,
+    pub cancelled: bool,
+}
+
 pub async fn create_chat_completion(
     state: &AppState,
     messages: Vec<ChatCompletionMessage>,
@@ -272,79 +286,44 @@ pub async fn create_chat_completion(
     temperature: Option<f64>,
     max_tokens: Option<i64>,
 ) -> Result<String, AppError> {
-    create_chat_completion_stream(state, messages, model, temperature, max_tokens, |_| {}).await
+    create_chat_completion_stream(state, messages, model, temperature, max_tokens, None, |_| {})
+        .await
+        .map(|result| result.content)
 }
 
-pub async fn create_chat_completion_stream<F>(
+pub async fn create_chat_completion_non_stream(
     state: &AppState,
     messages: Vec<ChatCompletionMessage>,
     model: Option<&str>,
     temperature: Option<f64>,
     max_tokens: Option<i64>,
-    mut on_delta: F,
-) -> Result<String, AppError>
-where
-    F: FnMut(&str),
-{
+    cancel: Option<Arc<AtomicBool>>,
+    tools: Option<Vec<serde_json::Value>>,
+) -> Result<CompletionResult, AppError> {
     let runtime = AiRuntime::from_state(state)?;
     let model = model.unwrap_or(&runtime.config.ai_model);
     let temperature = temperature.unwrap_or(0.7);
     let max_tokens = max_tokens.unwrap_or(2048);
-    let messages_for_fallback = messages.clone();
-    let body = build_completion_request_body(model, messages, temperature, max_tokens, true);
+    let body = build_completion_request_body(
+        model,
+        messages,
+        temperature,
+        max_tokens,
+        false,
+        tools,
+    );
     let max_attempts = runtime.config.ai_max_retries.max(0) + 1;
     let mut last_error: Option<AiClientError> = None;
 
     for attempt in 0..max_attempts {
-        if attempt > 0 {
-            let backoff_ms = std::cmp::min(8000, 500 * 2_u64.pow(attempt - 1));
-            tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+        if is_cancelled(cancel.as_ref()) {
+            return Ok(CompletionResult {
+                content: String::new(),
+                tool_calls: Vec::new(),
+                cancelled: true,
+            });
         }
 
-        match stream_completion(&runtime, &body, &mut on_delta).await {
-            Ok(content) => return Ok(content),
-            Err(err) if is_retryable(&err) && attempt < max_attempts - 1 => {
-                last_error = Some(err);
-                continue;
-            }
-            Err(err) if should_fallback_to_non_stream(&err) => {
-                return create_non_stream_completion(
-                    &runtime,
-                    model,
-                    messages_for_fallback,
-                    temperature,
-                    max_tokens,
-                    &mut on_delta,
-                )
-                .await;
-            }
-            Err(err) => return Err(AppError::ai_provider(user_message_for_ai_error(&err))),
-        }
-    }
-
-    Err(AppError::ai_provider(user_message_for_ai_error(
-        &last_error.unwrap_or_else(|| {
-            AiClientError::new("AI request failed.", AiErrorCode::Unknown)
-        }),
-    )))
-}
-
-async fn create_non_stream_completion<F>(
-    runtime: &AiRuntime,
-    model: &str,
-    messages: Vec<ChatCompletionMessage>,
-    temperature: f64,
-    max_tokens: i64,
-    on_delta: &mut F,
-) -> Result<String, AppError>
-where
-    F: FnMut(&str),
-{
-    let body = build_completion_request_body(model, messages, temperature, max_tokens, false);
-    let max_attempts = runtime.config.ai_max_retries.max(0) + 1;
-    let mut last_error: Option<AiClientError> = None;
-
-    for attempt in 0..max_attempts {
         if attempt > 0 {
             let backoff_ms = std::cmp::min(8000, 500 * 2_u64.pow(attempt - 1));
             tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
@@ -379,10 +358,280 @@ where
                     )))
                 })?;
 
-                let content = parse_completion_content(&text)
+                let parsed = parse_completion_response(&text)
                     .map_err(|msg| AppError::ai_provider(msg))?;
-                on_delta(&content);
-                return Ok(content);
+
+                return Ok(CompletionResult {
+                    content: parsed.content,
+                    tool_calls: parsed.tool_calls,
+                    cancelled: false,
+                });
+            }
+            Err(err) => {
+                let classified = map_reqwest_error(err);
+                if is_retryable(&classified) && attempt < max_attempts - 1 {
+                    last_error = Some(classified);
+                    continue;
+                }
+                return Err(AppError::ai_provider(user_message_for_ai_error(
+                    &classified,
+                )));
+            }
+        }
+    }
+
+    Err(AppError::ai_provider(user_message_for_ai_error(
+        &last_error.unwrap_or_else(|| {
+            AiClientError::new("AI request failed.", AiErrorCode::Unknown)
+        }),
+    )))
+}
+
+pub async fn transcribe_audio(
+    state: &AppState,
+    attachment: &crate::models::ChatAttachment,
+    analysis_prompt: &str,
+) -> Result<String, AppError> {
+    let runtime = AiRuntime::from_state(state)?;
+    let config = &runtime.config;
+    let model = {
+        let audio = config.ai_audio_model.trim();
+        if !audio.is_empty() {
+            audio.to_string()
+        } else {
+            "whisper-1".to_string()
+        }
+    };
+
+    let buffer = base64::Engine::decode(
+        &base64::engine::general_purpose::STANDARD,
+        &attachment.base64,
+    )
+    .map_err(|_| AppError::bad_request("Invalid audio data"))?;
+
+    let filename = attachment
+        .filename
+        .clone()
+        .unwrap_or_else(|| format!("audio.{}", audio_ext_from_mime(&attachment.mime_type)));
+
+    let part = reqwest::multipart::Part::bytes(buffer)
+        .file_name(filename)
+        .mime_str(&attachment.mime_type)
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let form = reqwest::multipart::Form::new()
+        .text("model", model)
+        .part("file", part);
+
+    let response = runtime
+        .http
+        .post(format!("{}/audio/transcriptions", runtime.base_url))
+        .header("Authorization", runtime.auth_header())
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|err| AppError::ai_provider(user_message_for_ai_error(&map_reqwest_error(err))))?;
+
+    let status = response.status().as_u16();
+    if !response.status().is_success() {
+        let text = response.text().await.unwrap_or_default();
+        let err = classify_ai_http_error(status, &text);
+        return Err(AppError::ai_provider(user_message_for_ai_error(&err)));
+    }
+
+    let body: serde_json::Value = response.json().await.map_err(|e| {
+        AppError::ai_provider(format!("Could not parse transcription response: {e}"))
+    })?;
+
+    let transcript = body
+        .get("text")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    if analysis_prompt.trim().is_empty() {
+        return Ok(transcript);
+    }
+
+    let messages = vec![ChatCompletionMessage {
+        role: "user".to_string(),
+        content: Some(crate::models::ai::ChatCompletionContent::Text(format!(
+            "Transcript:\n{transcript}\n\n{analysis_prompt}"
+        ))),
+        tool_calls: None,
+        tool_call_id: None,
+        name: None,
+    }];
+
+    create_chat_completion_non_stream(state, messages, None, Some(0.3), Some(1024), None, None)
+        .await
+        .map(|r| r.content)
+}
+
+fn audio_ext_from_mime(mime: &str) -> &'static str {
+    match mime {
+        "audio/mpeg" | "audio/mp3" => "mp3",
+        "audio/wav" | "audio/x-wav" => "wav",
+        "audio/webm" => "webm",
+        "audio/ogg" => "ogg",
+        "audio/mp4" | "audio/x-m4a" | "audio/m4a" => "m4a",
+        _ => "wav",
+    }
+}
+
+pub async fn create_chat_completion_stream<F>(
+    state: &AppState,
+    messages: Vec<ChatCompletionMessage>,
+    model: Option<&str>,
+    temperature: Option<f64>,
+    max_tokens: Option<i64>,
+    cancel: Option<Arc<AtomicBool>>,
+    mut on_delta: F,
+) -> Result<CompletionResult, AppError>
+where
+    F: FnMut(&str),
+{
+    let runtime = AiRuntime::from_state(state)?;
+    let model = model.unwrap_or(&runtime.config.ai_model);
+    let temperature = temperature.unwrap_or(0.7);
+    let max_tokens = max_tokens.unwrap_or(2048);
+    let messages_for_fallback = messages.clone();
+    let body = build_completion_request_body(model, messages, temperature, max_tokens, true, None);
+    let max_attempts = runtime.config.ai_max_retries.max(0) + 1;
+    let mut last_error: Option<AiClientError> = None;
+
+    for attempt in 0..max_attempts {
+        if is_cancelled(cancel.as_ref()) {
+            return Ok(CompletionResult {
+                content: String::new(),
+                tool_calls: Vec::new(),
+                cancelled: true,
+            });
+        }
+
+        if attempt > 0 {
+            let backoff_ms = std::cmp::min(8000, 500 * 2_u64.pow(attempt - 1));
+            tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+            if is_cancelled(cancel.as_ref()) {
+                return Ok(CompletionResult {
+                    content: String::new(),
+                    tool_calls: Vec::new(),
+                    cancelled: true,
+                });
+            }
+        }
+
+        match stream_completion(&runtime, &body, cancel.as_ref(), &mut on_delta).await {
+            Ok(result) => return Ok(result),
+            Err(err) if is_retryable(&err) && attempt < max_attempts - 1 => {
+                last_error = Some(err);
+                continue;
+            }
+            Err(err) if should_fallback_to_non_stream(&err) => {
+                return create_non_stream_completion(
+                    &runtime,
+                    model,
+                    messages_for_fallback,
+                    temperature,
+                    max_tokens,
+                    cancel.as_ref(),
+                    &mut on_delta,
+                )
+                .await;
+            }
+            Err(err) => return Err(AppError::ai_provider(user_message_for_ai_error(&err))),
+        }
+    }
+
+    Err(AppError::ai_provider(user_message_for_ai_error(
+        &last_error.unwrap_or_else(|| {
+            AiClientError::new("AI request failed.", AiErrorCode::Unknown)
+        }),
+    )))
+}
+
+async fn create_non_stream_completion<F>(
+    runtime: &AiRuntime,
+    model: &str,
+    messages: Vec<ChatCompletionMessage>,
+    temperature: f64,
+    max_tokens: i64,
+    cancel: Option<&Arc<AtomicBool>>,
+    on_delta: &mut F,
+) -> Result<CompletionResult, AppError>
+where
+    F: FnMut(&str),
+{
+    let body = build_completion_request_body(model, messages, temperature, max_tokens, false, None);
+    let max_attempts = runtime.config.ai_max_retries.max(0) + 1;
+    let mut last_error: Option<AiClientError> = None;
+
+    for attempt in 0..max_attempts {
+        if is_cancelled(cancel) {
+            return Ok(CompletionResult {
+                content: String::new(),
+                tool_calls: Vec::new(),
+                cancelled: true,
+            });
+        }
+
+        if attempt > 0 {
+            let backoff_ms = std::cmp::min(8000, 500 * 2_u64.pow(attempt - 1));
+            tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+            if is_cancelled(cancel) {
+                return Ok(CompletionResult {
+                    content: String::new(),
+                    tool_calls: Vec::new(),
+                    cancelled: true,
+                });
+            }
+        }
+
+        let response = runtime
+            .http
+            .post(format!("{}/chat/completions", runtime.base_url))
+            .header("Content-Type", "application/json")
+            .header("Authorization", runtime.auth_header())
+            .json(&body)
+            .send()
+            .await;
+
+        match response {
+            Ok(res) => {
+                let status = res.status().as_u16();
+                if !res.status().is_success() {
+                    let text = res.text().await.unwrap_or_default();
+                    let err = classify_ai_http_error(status, &text);
+                    if is_retryable(&err) && attempt < max_attempts - 1 {
+                        last_error = Some(err);
+                        continue;
+                    }
+                    return Err(AppError::ai_provider(user_message_for_ai_error(&err)));
+                }
+
+                let text = res.text().await.map_err(|e| {
+                    AppError::ai_provider(user_message_for_ai_error(&AiClientError::new(
+                        e.to_string(),
+                        AiErrorCode::Unknown,
+                    )))
+                })?;
+
+                if is_cancelled(cancel) {
+                return Ok(CompletionResult {
+                    content: String::new(),
+                    tool_calls: Vec::new(),
+                    cancelled: true,
+                });
+                }
+
+                let parsed = parse_completion_response(&text)
+                    .map_err(|msg| AppError::ai_provider(msg))?;
+                on_delta(&parsed.content);
+                return Ok(CompletionResult {
+                    content: parsed.content,
+                    tool_calls: parsed.tool_calls,
+                    cancelled: false,
+                });
             }
             Err(err) => {
                 let classified = map_reqwest_error(err);
@@ -407,11 +656,20 @@ where
 async fn stream_completion<F>(
     runtime: &AiRuntime,
     body: &crate::models::ai::ChatCompletionRequest,
+    cancel: Option<&Arc<AtomicBool>>,
     on_delta: &mut F,
-) -> Result<String, AiClientError>
+) -> Result<CompletionResult, AiClientError>
 where
     F: FnMut(&str),
 {
+    if is_cancelled(cancel) {
+                return Ok(CompletionResult {
+                    content: String::new(),
+                    tool_calls: Vec::new(),
+                    cancelled: true,
+                });
+    }
+
     let response = runtime
         .http
         .post(format!("{}/chat/completions", runtime.base_url))
@@ -433,6 +691,14 @@ where
     let mut content = String::new();
 
     while let Some(chunk) = stream.next().await {
+        if is_cancelled(cancel) {
+            return Ok(CompletionResult {
+                content,
+                tool_calls: Vec::new(),
+                cancelled: true,
+            });
+        }
+
         let chunk = chunk.map_err(map_reqwest_error)?;
         buffer.push_str(&String::from_utf8_lossy(&chunk));
 
@@ -462,13 +728,24 @@ where
     }
 
     if content.is_empty() {
+        if is_cancelled(cancel) {
+            return Ok(CompletionResult {
+                content: String::new(),
+                tool_calls: Vec::new(),
+                cancelled: true,
+            });
+        }
         return Err(AiClientError::new(
             "The model returned an empty response.",
             AiErrorCode::Provider,
         ));
     }
 
-    Ok(content)
+    Ok(CompletionResult {
+        content,
+        tool_calls: Vec::new(),
+        cancelled: false,
+    })
 }
 
 #[cfg(test)]

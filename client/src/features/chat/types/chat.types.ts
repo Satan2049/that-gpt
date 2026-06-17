@@ -1,8 +1,24 @@
-export type MessageRole = "system" | "user" | "assistant";
+export type MessageRole = "system" | "user" | "assistant" | "tool";
+
+export type AttachmentKind = "image" | "audio" | "text" | "pdf";
 
 export type ChatImageAttachment = {
-  mimeType: "image/jpeg" | "image/png" | "image/webp";
+  mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
   base64: string;
+};
+
+export type ChatAttachment = {
+  kind: AttachmentKind;
+  mimeType: string;
+  base64: string;
+  filename?: string;
+  textContent?: string;
+};
+
+export type ToolCallRecord = {
+  id: string;
+  name: string;
+  arguments: string;
 };
 
 export type ChatMessage = {
@@ -12,6 +28,10 @@ export type ChatMessage = {
   content: string;
   createdAt: string;
   images?: ChatImageAttachment[];
+  attachments?: ChatAttachment[];
+  toolCalls?: ToolCallRecord[];
+  toolCallId?: string;
+  toolName?: string;
 };
 
 export type Conversation = {
@@ -27,4 +47,10 @@ export type ConversationSummary = {
   id: string;
   title: string;
   updatedAt: string;
+};
+
+export type PendingAttachmentPayload = {
+  mimeType: string;
+  base64: string;
+  filename?: string;
 };

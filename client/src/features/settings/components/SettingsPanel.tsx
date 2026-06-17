@@ -8,6 +8,8 @@ type SettingsForm = {
   aiApiKey: string;
   aiBaseUrl: string;
   aiModel: string;
+  aiImageModel: string;
+  aiAudioModel: string;
   aiDefaultSystemPrompt: string;
   aiRequestTimeoutMs: string;
   aiMaxRetries: string;
@@ -19,6 +21,8 @@ function toForm(settings: AppSettings, theme: Theme): SettingsForm {
     aiApiKey: settings.aiApiKey,
     aiBaseUrl: settings.aiBaseUrl,
     aiModel: settings.aiModel,
+    aiImageModel: settings.aiImageModel,
+    aiAudioModel: settings.aiAudioModel,
     aiDefaultSystemPrompt: settings.aiDefaultSystemPrompt,
     aiRequestTimeoutMs: String(settings.aiRequestTimeoutMs),
     aiMaxRetries: String(settings.aiMaxRetries),
@@ -66,6 +70,17 @@ export function SettingsPanel({ open, theme, onThemeChange, onClose }: SettingsP
     }
   }, [settings, open, theme]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
   if (!open) {
     return null;
   }
@@ -84,6 +99,8 @@ export function SettingsPanel({ open, theme, onThemeChange, onClose }: SettingsP
       aiApiKey: form.aiApiKey,
       aiBaseUrl: form.aiBaseUrl.trim(),
       aiModel: form.aiModel.trim(),
+      aiImageModel: form.aiImageModel.trim(),
+      aiAudioModel: form.aiAudioModel.trim(),
       aiDefaultSystemPrompt: form.aiDefaultSystemPrompt,
       aiRequestTimeoutMs: Math.round(aiRequestTimeoutMs),
       aiMaxRetries: Math.round(aiMaxRetries)
@@ -216,6 +233,37 @@ export function SettingsPanel({ open, theme, onThemeChange, onClose }: SettingsP
                   {modelsLoading ? "Loading…" : "Refresh models"}
                 </button>
               </div>
+              <label className="settings-field">
+                Image model (optional)
+                <input
+                  type="text"
+                  list="chatnest-model-options"
+                  value={form.aiImageModel}
+                  onChange={(e) =>
+                    setForm((f) => (f ? { ...f, aiImageModel: e.target.value } : f))
+                  }
+                  placeholder="gpt-4o (uses default model when empty)"
+                />
+              </label>
+              <p className="settings-hint">
+                Used for messages with image attachments and the analyze_image tool. Leave empty to
+                use the default model.
+              </p>
+              <label className="settings-field">
+                Audio model (optional)
+                <input
+                  type="text"
+                  list="chatnest-model-options"
+                  value={form.aiAudioModel}
+                  onChange={(e) =>
+                    setForm((f) => (f ? { ...f, aiAudioModel: e.target.value } : f))
+                  }
+                  placeholder="whisper-1 (uses whisper-1 when empty)"
+                />
+              </label>
+              <p className="settings-hint">
+                Used by the analyze_audio tool for transcription via /audio/transcriptions.
+              </p>
               <div className="settings-action-row">
                 <button
                   type="button"
@@ -301,8 +349,9 @@ export function SettingsPanel({ open, theme, onThemeChange, onClose }: SettingsP
                 </label>
               </div>
               <p className="settings-hint">
-                Image attachments: up to {settings?.maxImagesPerMessage ?? 4} images, {maxImageMb}
-                MB each (JPEG, PNG, WebP).
+                Attachments: up to {settings?.maxImagesPerMessage ?? 4} files — images & audio{" "}
+                {maxImageMb}MB each, text/PDF up to 512KB/5MB (JPEG, PNG, WebP, GIF, MP3, WAV, PDF,
+                TXT, MD, CSV, JSON).
               </p>
               {settings ? (
                 <p className="settings-hint settings-path">
