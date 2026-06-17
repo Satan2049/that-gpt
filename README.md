@@ -15,6 +15,8 @@
 
 [Features](#features) · [Screenshots](#screenshots) · [Installation](#installation) · [Development](#development) · [Build](#build) · [Changelog](CHANGELOG.md) · [Trust](#trust) · [Contributing](CONTRIBUTING.md)
 
+**[Landing page](https://satan2049.github.io/chat-nest/)** · **[v2.0.0 release notes](docs/RELEASE_v2.0.0.md)**
+
 <img src="assets/banner.png" alt="ChatNest banner" width="100%" />
 
 </div>
@@ -23,7 +25,7 @@
 
 ## Description
 
-ChatNest is a stable, open-source desktop chat client (v2). Conversations, prompt presets, and multimodal attachments are handled in a React UI. A **Rust + Tauri** backend stores data as JSON on disk and proxies all model requests so your API key never enters the webview.
+ChatNest **v2** is an open-source **Windows desktop** chat client. Conversations, prompt presets, and multimodal attachments live in a redesigned React UI. A **Rust + Tauri** backend stores JSON on disk and proxies all model requests so your API key never enters the webview.
 
 **Design goals:** credentials stay in the desktop shell, no database overhead, any OpenAI-compatible endpoint.
 
@@ -32,11 +34,15 @@ ChatNest is a stable, open-source desktop chat client (v2). Conversations, promp
 | | |
 |---|---|
 | **Chat** | Persistent threads stored locally as JSON |
-| **Vision** | JPEG, PNG, WebP attachments with server-side validation |
+| **Markdown** | GFM rendering with syntax-highlighted code blocks |
+| **Agent tools** | Tool-calling loop; stop or regenerate responses |
+| **Attachments** | Images, audio, text files, and PDFs |
+| **Vision** | JPEG, PNG, WebP with server-side validation |
 | **Presets** | Reusable system prompts with model, temperature, and token limits |
-| **Themes** | Light / dark UI with CSS variable design tokens |
+| **Themes** | Light / dark UI with design tokens and Inter typography |
+| **Layout** | Responsive drawer on narrow windows; full sidebar on desktop |
 | **Reliability** | Retries, timeouts, and clear errors for provider failures |
-| **Settings UI** | API key, provider URL, model, prompts, timeout — all editable in-app |
+| **Settings UI** | API key, provider URL, models, timeout — all editable in-app |
 | **Streaming** | Assistant replies appear token-by-token |
 | **Export** | Download conversations as Markdown or JSON |
 
@@ -60,10 +66,10 @@ ChatNest is a stable, open-source desktop chat client (v2). Conversations, promp
 
 ### Download (recommended)
 
-1. Open [GitHub Releases](https://github.com/Satan2049/chat-nest/releases).
-2. Download **portable** `.exe` or **setup** installer for Windows x64.
-3. Verify checksums — see [docs/TRUST.md](docs/TRUST.md) and [`SHA256.txt`](SHA256.txt).
-4. *(Optional)* Review [VirusTotal reports](docs/TRUST.md#published-reports-v110) for the release binaries.
+1. Open **[GitHub Releases — v2.0.0](https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0)**.
+2. Download **portable** `.exe` or **NSIS setup** installer for Windows x64.
+3. Verify checksums — [`SHA256.txt`](SHA256.txt) and [docs/TRUST.md](docs/TRUST.md).
+4. *(Optional)* Review [VirusTotal reports (v2.0.0)](docs/TRUST.md#published-reports-v200).
 
 ### Configure API access
 
@@ -104,6 +110,7 @@ npm install
 npm run dev          # Tauri + Vite hot reload
 npm run test:rust    # Rust unit tests
 npm run build:client # Frontend only
+npm run clean        # Remove build artifacts & temp files
 ```
 
 Config template: [`src-tauri/.env.example`](src-tauri/.env.example)
@@ -128,7 +135,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for pull request guidelines.
 | `npm run build` | NSIS installer + portable EXE |
 | `npm run build:portable` | Portable EXE only |
 | `npm run release:package` | Stage `release/` folder with ZIPs |
-| `npm run release:hashes` | Generate `SHA256.txt` |
+| `npm run release:hashes` | Regenerate `SHA256.txt` from built artifacts |
+| `npm run clean` | Delete `target/`, `client/dist/`, caches, logs |
+| `npm run clean:all` | Also remove `node_modules`, `release/`, Android gen |
 
 Artifacts:
 
@@ -138,43 +147,6 @@ src-tauri/target/release/bundle/nsis/ChatNest_*_x64-setup.exe
 release/                                    # after release:package
 SHA256.txt                                  # after release:hashes
 ```
-
-### Android (Tauri mobile)
-
-**Prerequisites:** [Android Studio](https://developer.android.com/studio), Android SDK, NDK, and Rust Android targets (`rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android`).
-
-One-time setup:
-
-```bash
-npm install
-npm run android:init    # creates src-tauri/gen/android/
-```
-
-Development (device or emulator):
-
-```bash
-npm run android:dev
-```
-
-Release APK/AAB:
-
-```bash
-npm run android:build
-```
-
-Outputs land under `src-tauri/gen/android/app/build/outputs/`.
-
-Platform config: [`src-tauri/tauri.android.conf.json`](src-tauri/tauri.android.conf.json) (bundle id `com.chatnest.app`).
-
-### iOS (macOS only)
-
-```bash
-npm run ios:init
-npm run ios:dev
-npm run ios:build
-```
-
-Requires Xcode on macOS. Config: [`src-tauri/tauri.ios.conf.json`](src-tauri/tauri.ios.conf.json).
 
 ## Architecture
 
@@ -202,6 +174,7 @@ Details: [`docs/repository-intelligence.md`](docs/repository-intelligence.md)
 ## Trust
 
 - Verify downloads: [docs/TRUST.md](docs/TRUST.md)
+- v2.0.0 VirusTotal: [NSIS](https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1) · [Portable](https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1)
 - Report security issues: [SECURITY.md](SECURITY.md)
 - Checksums: [`SHA256.txt`](SHA256.txt)
 

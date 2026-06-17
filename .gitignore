@@ -9,4 +9,5 @@ server/data/prompts/*.json
 !server/data/chats/.gitkeep
 !server/data/prompts/.gitkeep
 src-tauri/target/
+src-tauri/gen/android/
 release/

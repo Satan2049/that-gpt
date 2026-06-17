@@ -6,6 +6,7 @@
   "private": false,
   "scripts": {
     "dev": "tauri dev",
+    "tauri": "tauri",
     "build": "tauri build && node scripts/stage-portable.mjs",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build && node scripts/stage-portable.mjs",
@@ -14,15 +15,14 @@
     "dev:client": "npm --prefix client run dev",
     "build:client": "npm --prefix client run build",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "android:init": "tauri android init",
-    "android:dev": "tauri android dev",
-    "android:build": "tauri android build",
     "ios:init": "tauri ios init",
     "ios:dev": "tauri ios dev",
     "ios:build": "tauri ios build",
     "release:package": "powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1",
     "release:hashes": "powershell -ExecutionPolicy Bypass -File scripts/generate-sha256.ps1",
     "release:verify": "powershell -ExecutionPolicy Bypass -File scripts/generate-sha256.ps1 -Package",
+    "clean": "powershell -ExecutionPolicy Bypass -File scripts/clean-project.ps1",
+    "clean:all": "powershell -ExecutionPolicy Bypass -File scripts/clean-project.ps1 -All -Release -Android",
     "postinstall": "npm install --prefix client"
   },
   "devDependencies": {

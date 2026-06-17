@@ -5,15 +5,17 @@ All notable changes to ChatNest are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2026-06-16
+## [2.0.0] - 2026-06-17
 
-Major release focused on look-and-feel, mobile-ready layout, and agent features.
+Major **Windows desktop** release: redesigned UI, agent tooling, and richer chat workflows.
+
+Release notes: [docs/RELEASE_v2.0.0.md](docs/RELEASE_v2.0.0.md)
 
 ### Added
 
 - **Design system** — Expanded tokens (spacing, radius, shadows, semantic colors) and Inter font loading
-- **Branding** — In-app logo mark and refreshed shell layout
-- **Mobile-ready sidebar** — Slide-over drawer with backdrop on narrow viewports (prep for Tauri mobile)
+- **Branding** — In-app logo mark, refreshed desktop shell, and updated app icons
+- **Responsive layout** — Slide-over drawer with bottom tabs on narrow viewports; full sidebar on desktop
 - **Markdown rendering** — Assistant messages render GFM markdown with syntax-highlighted code blocks
 - **Stop generation** — Cancel in-flight streaming from the composer
 - **Tool calling** — Agent loop with image, audio, and attachment analysis tools
@@ -22,6 +24,7 @@ Major release focused on look-and-feel, mobile-ready layout, and agent features.
 - **Copy** — Copy full messages or individual code blocks
 - **Rename & search** — Rename conversations; debounced sidebar search
 - **Optional image/audio models** — Separate model settings for vision and transcription
+- **Project cleanup script** — `npm run clean` removes build artifacts and temp files
 
 ### Changed
 
@@ -29,6 +32,7 @@ Major release focused on look-and-feel, mobile-ready layout, and agent features.
 - Floating composer card with elevated surface styling
 - Preset default label reflects in-app settings instead of `.env`
 - Theme toggle moved to a compact header control; full theme choice remains in Settings
+- Rust app entry moved to `lib.rs` (`run()`) for Tauri 2 compatibility
 
 ### Fixed
 
@@ -36,6 +40,11 @@ Major release focused on look-and-feel, mobile-ready layout, and agent features.
 - Delete conversation now asks for confirmation
 - Settings modal closes on Escape
 - Removed unused `imageAttachmentLimits` module
+- Dark mode composer input colors
+
+### Removed
+
+- **Android mobile build** — Tauri Android target and `src-tauri/gen/android/` removed from the repo; ChatNest v2 ships as **Windows desktop** only
 
 ## [1.1.0] - 2026-06-10
 
@@ -84,6 +93,7 @@ First stable release of ChatNest as a local-first desktop application.
 
 Initial Tauri migration and internal testing builds. Superseded by **1.0.0**.
 
+[2.0.0]: https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0
 [1.1.0]: https://github.com/Satan2049/chat-nest/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Satan2049/chat-nest/releases/tag/v1.0.0
 [0.1.0]: https://github.com/Satan2049/chat-nest/releases/tag/v0.1.0

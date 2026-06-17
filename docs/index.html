@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ChatNest — desktop chat for OpenAI-compatible APIs. File-backed storage, Rust backend, React UI."
+      content="ChatNest v2 — Windows desktop chat for OpenAI-compatible APIs. Markdown, agent tools, JSON storage, Rust + Tauri."
     />
     <meta name="theme-color" content="#3f6fff" />
-    <meta property="og:title" content="ChatNest" />
+    <meta property="og:title" content="ChatNest v2" />
     <meta
       property="og:description"
-      content="Desktop chat for OpenAI-compatible APIs. JSON storage, no database."
+      content="Desktop chat for OpenAI-compatible APIs. Redesigned UI, markdown, agent tools, local JSON storage."
     />
-    <title>ChatNest</title>
+    <title>ChatNest v2</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -51,7 +51,7 @@
           <button type="button" class="btn btn-ghost" id="theme-toggle" aria-label="Toggle color theme">
             Dark mode
           </button>
-          <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases">Download v1.1.0</a>
+          <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0">Download v2.0.0</a>
         </div>
       </header>
 
@@ -59,27 +59,32 @@
         <section id="overview" class="hero-grid">
           <article class="panel hero-copy">
             <div class="eyebrow">
-              <span class="pill pill-accent">v1.1.0</span>
+              <span class="pill pill-accent">v2.0.0</span>
               <span class="pill">OpenAI-compatible</span>
               <span class="pill">Windows</span>
               <span class="pill">MIT</span>
             </div>
             <p class="section-title">Product overview</p>
-            <h1>Desktop chat with credentials kept in the Rust shell</h1>
+            <h1>Desktop chat, redesigned — credentials stay in Rust</h1>
             <p class="hero-lead">
-              ChatNest pairs a React UI with a Rust + Tauri backend. Conversation history and
-              prompt presets persist as JSON on disk. Streaming replies, in-app settings, and
-              export to Markdown or JSON — configure any compatible provider and run locally.
+              ChatNest v2 pairs a refreshed React UI with a Rust + Tauri backend. Markdown replies,
+              agent tooling, multimodal attachments, and a responsive drawer layout — while
+              conversations and presets persist as JSON on disk.
             </p>
             <div class="hero-cta">
-              <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases">Download release</a>
+              <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0">Download v2.0.0</a>
               <a class="btn" href="https://github.com/Satan2049/chat-nest">GitHub</a>
             </div>
           </article>
           <figure class="panel hero-preview">
-            <p class="hero-lead" style="padding: 2rem; text-align: center; margin: 0;">
-              Run <code>npm run dev</code> to open the ChatNest desktop window.
-            </p>
+            <img
+              src="https://raw.githubusercontent.com/Satan2049/chat-nest/main/assets/screenshots/screenshot-chat.png"
+              alt="ChatNest v2 chat interface"
+              width="640"
+              height="360"
+              style="width: 100%; height: auto; display: block; border-radius: 8px"
+              loading="lazy"
+            />
           </figure>
         </section>
 
@@ -93,50 +98,50 @@
             <span>Threads and presets are plain JSON in the app data directory for simple backup and inspection.</span>
           </article>
           <article class="panel metric">
-            <strong>Provider-agnostic</strong>
-            <span>Point <code>AI_BASE_URL</code> at any OpenAI-compatible endpoint with configurable model defaults.</span>
+            <strong>Agent-ready</strong>
+            <span>Tool calling, stop generation, regenerate, and rich attachments — images, audio, text, PDF.</span>
           </article>
         </section>
 
         <section id="capabilities" class="section-block">
           <p class="section-title">Capabilities</p>
-          <h2 class="section-heading">Everything required for focused local use</h2>
+          <h2 class="section-heading">What’s new in v2</h2>
           <div class="features">
             <article class="panel feature">
-              <h3>Conversation management</h3>
-              <p>Create, rename, and delete threads. History is loaded on demand from per-file JSON records.</p>
+              <h3>Markdown &amp; code</h3>
+              <p>GFM rendering with syntax highlighting. Copy full messages or individual code blocks.</p>
             </article>
             <article class="panel feature">
-              <h3>Prompt presets</h3>
-              <p>Define system prompts with model and temperature. Assign a preset per conversation from the sidebar.</p>
+              <h3>Agent workflow</h3>
+              <p>Tool-calling loop, stop in-flight streams, and regenerate the last assistant reply.</p>
             </article>
             <article class="panel feature">
               <h3>Multimodal input</h3>
-              <p>Attach JPEG, PNG, or WebP images. The backend validates MIME type, size, and count before forwarding.</p>
+              <p>Images, audio, text files, and PDFs with optional vision and transcription models.</p>
             </article>
             <article class="panel feature">
-              <h3>Streaming responses</h3>
-              <p>Assistant messages render token-by-token as the provider streams the completion.</p>
+              <h3>Responsive shell</h3>
+              <p>Drawer navigation on narrow windows; full sidebar layout on desktop widths.</p>
+            </article>
+            <article class="panel feature">
+              <h3>Design refresh</h3>
+              <p>Design tokens, Inter typography, elevated composer, and polished dark mode.</p>
+            </article>
+            <article class="panel feature">
+              <h3>Conversation tools</h3>
+              <p>Rename threads, debounced sidebar search, export Markdown or JSON.</p>
+            </article>
+            <article class="panel feature">
+              <h3>Prompt presets</h3>
+              <p>Reusable system prompts with model and temperature per conversation.</p>
             </article>
             <article class="panel feature">
               <h3>In-app settings</h3>
-              <p>API key, base URL, model, system prompt, timeout, and retries — editable from Settings.</p>
-            </article>
-            <article class="panel feature">
-              <h3>Export conversations</h3>
-              <p>Download the active thread as Markdown or JSON from the header export menu.</p>
-            </article>
-            <article class="panel feature">
-              <h3>Theme persistence</h3>
-              <p>Light and dark modes mirror the in-app palette. Preference is stored in browser local storage.</p>
-            </article>
-            <article class="panel feature">
-              <h3>Operational errors</h3>
-              <p>Timeouts, rate limits, authentication failures, and network issues return actionable UI messages.</p>
+              <p>API key, base URL, models, timeout, and retries — no manual file editing required.</p>
             </article>
             <article class="panel feature">
               <h3>Native desktop</h3>
-              <p>React with Vite in a Tauri window. Rust handles storage, validation, and provider calls.</p>
+              <p>Tauri 2 + Rust on Windows. Portable EXE or NSIS installer from GitHub Releases.</p>
             </article>
           </div>
         </section>
@@ -159,7 +164,7 @@
           <dl class="stack" style="margin-top: 12px">
             <div class="panel stack-item">
               <dt>client/</dt>
-              <dd>React · Vite · Zustand → UI state, chat &amp; preset forms</dd>
+              <dd>React · Vite · Zustand → UI, shells, chat &amp; preset forms</dd>
             </div>
             <div class="panel stack-item">
               <dt>src-tauri/</dt>
@@ -170,19 +175,23 @@
 
         <section id="download" class="section-block">
           <p class="section-title">Download</p>
-          <h2 class="section-heading">Windows x64 — v1.1.0</h2>
+          <h2 class="section-heading">Windows x64 — v2.0.0</h2>
           <div class="panel" style="padding: 1.25rem">
             <p style="margin-top: 0">
-              Pre-built binaries are published on
-              <a href="https://github.com/Satan2049/chat-nest/releases">GitHub Releases</a>:
+              Pre-built binaries on
+              <a href="https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0">GitHub Releases v2.0.0</a>:
               portable <code>.exe</code> or NSIS setup installer.
             </p>
             <p>
-              Verify downloads with <a href="./TRUST.md">SHA256 checksums</a> and optional
-              <a href="#trust">VirusTotal reports</a> below.
+              Verify with <a href="https://github.com/Satan2049/chat-nest/blob/main/SHA256.txt">SHA256.txt</a> and
+              <a href="./TRUST.md">Trust &amp; verification</a>.
+            </p>
+            <p>
+              Full release notes:
+              <a href="https://github.com/Satan2049/chat-nest/blob/main/docs/RELEASE_v2.0.0.md">RELEASE_v2.0.0.md</a>
             </p>
             <div class="hero-cta" style="margin-top: 1rem">
-              <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases">Get ChatNest</a>
+              <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0">Get ChatNest v2</a>
               <a class="btn" href="./TRUST.md">Trust &amp; verification</a>
             </div>
           </div>
@@ -190,7 +199,7 @@
 
         <section id="trust" class="section-block">
           <p class="section-title">Trust</p>
-          <h2 class="section-heading">VirusTotal reports (v1.1.0)</h2>
+          <h2 class="section-heading">VirusTotal reports (v2.0.0)</h2>
           <p class="hero-lead" style="max-width: 720px">
             Independent scans for the published Windows builds. Two heuristic engines (SecureAge, Trapmine)
             may flag new unsigned binaries — see
@@ -200,16 +209,18 @@
             <article class="panel feature">
               <h3>Portable EXE</h3>
               <p>
-                <a href="https://www.virustotal.com/gui/file/a67da016dc47add860ed38c57de5461abcd4365aa59e597718208a0876876b8b">View VirusTotal report</a>
+                <a href="https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1">View VirusTotal report</a>
               </p>
-              <p><code style="word-break: break-all">SHA256: a67da016…876b8b</code></p>
+              <p>Trapmine — <code>Malicious.moderate.ml.score</code> (heuristic)</p>
+              <p><code style="word-break: break-all">SHA256: 752ab6eb…c3d74</code></p>
             </article>
             <article class="panel feature">
               <h3>NSIS setup EXE</h3>
               <p>
-                <a href="https://www.virustotal.com/gui/file/a92cb98a81771f10cd127bc4adb56e22a502394f46c1600b6b2eb44fd9e8e696">View VirusTotal report</a>
+                <a href="https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1">View VirusTotal report</a>
               </p>
-              <p><code style="word-break: break-all">SHA256: a92cb98a…8e696</code></p>
+              <p>SecureAge — <code>Malicious</code> (heuristic)</p>
+              <p><code style="word-break: break-all">SHA256: b5bacd87…e4552f</code></p>
             </article>
           </div>
         </section>
@@ -223,7 +234,7 @@
                 <span class="step-num">Option A</span>
                 <span class="step-title">Download a release</span>
               </div>
-              <pre><code># GitHub Releases → portable .exe or setup installer
+              <pre><code># GitHub Releases v2.0.0 → portable .exe or setup installer
 # Verify SHA256.txt from the same release</code></pre>
             </li>
             <li class="panel step">
@@ -251,7 +262,8 @@ npm run build</code></pre>
                 <span class="step-num">Develop</span>
                 <span class="step-title">Run with hot reload</span>
               </div>
-              <pre><code>npm run dev</code></pre>
+              <pre><code>npm run dev
+npm run clean   # remove build artifacts when needed</code></pre>
             </li>
           </ol>
           <div class="notice" role="note">
@@ -262,13 +274,13 @@ npm run build</code></pre>
       </main>
 
       <footer class="site-footer">
-        <span>MIT License · ChatNest v1.1.0 · Rust + Tauri 2</span>
+        <span>MIT License · ChatNest v2.0.0 · Rust + Tauri 2</span>
         <span>
           <a href="https://github.com/Satan2049/chat-nest">GitHub</a>
           ·
           <a href="./TRUST.md">Trust</a>
           ·
-          <a href="https://github.com/Satan2049/chat-nest/blob/main/README.md">README</a>
+          <a href="https://github.com/Satan2049/chat-nest/blob/main/CHANGELOG.md">Changelog</a>
         </span>
       </footer>
     </div>

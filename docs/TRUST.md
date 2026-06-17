@@ -80,6 +80,23 @@ After publishing a release, upload these files to VirusTotal:
 
 Add the VirusTotal report links to the GitHub Release notes so users can review them without re-uploading.
 
+### Published reports (v2.0.0)
+
+| File | SHA256 | VirusTotal | Notes |
+|------|--------|------------|-------|
+| NSIS setup EXE | `b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f` | [View report](https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1) | SecureAge — `Malicious` (heuristic) |
+| Portable EXE | `752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74` | [View report](https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1) | Trapmine — `Malicious.moderate.ml.score` (heuristic) |
+
+Copy this block into GitHub Release notes:
+
+```markdown
+## VirusTotal reports (v2.0.0)
+- NSIS installer: https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1
+- Portable EXE: https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1
+```
+
+**Note:** As of the published scan, **2 heuristic engines** (SecureAge, Trapmine) flagged these unsigned v2.0.0 builds. The majority of engines reported clean. See [Interpreting results](#interpreting-results) below.
+
 ### Published reports (v1.1.0)
 
 | File | SHA256 | VirusTotal |
