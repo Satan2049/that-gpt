@@ -1,0 +1,72 @@
+# Codemagic CI for ChatNest (Tauri 2)
+# Docs: https://docs.codemagic.io/yaml/yaml-getting-started/
+#
+# Setup in Codemagic UI:
+# 1. Connect this repository
+# 2. iOS: add App Store Connect API key or upload signing certificates
+# 3. Android: add keystore (CM_KEYSTORE, CM_KEYSTORE_PASSWORD, etc.) for release signing
+#
+# Note: iOS builds require a macOS builder. Android can run on Linux or macOS instances.
+
+workflows:
+  chatnest-ios:
+    name: ChatNest iOS
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      node: 20
+      xcode: latest
+      vars:
+        BUNDLE_ID: "com.chatnest.app"
+    scripts:
+      - name: Install Rust
+        script: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          source "$HOME/.cargo/env"
+          rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
+      - name: Install npm dependencies
+        script: npm install
+      - name: Initialize iOS project (if not committed yet)
+        script: |
+          if [ ! -d "src-tauri/gen/apple" ]; then
+            npm run ios:init
+          fi
+      - name: Build iOS app
+        script: |
+          source "$HOME/.cargo/env"
+          npm run ios:build
+    artifacts:
+      - src-tauri/gen/apple/build/**/*.ipa
+      - src-tauri/gen/apple/build/**/*.app
+
+  chatnest-android:
+    name: ChatNest Android
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      node: 20
+      java: 17
+      vars:
+        PACKAGE_NAME: "com.chatnest.app"
+        ANDROID_HOME: "$HOME/Library/Android/sdk"
+    scripts:
+      - name: Install Rust Android targets
+        script: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          source "$HOME/.cargo/env"
+          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+      - name: Install npm dependencies
+        script: npm install
+      - name: Initialize Android project (if not committed yet)
+        script: |
+          if [ ! -d "src-tauri/gen/android" ]; then
+            npm run android:init
+          fi
+      - name: Build Android APK/AAB
+        script: |
+          source "$HOME/.cargo/env"
+          export JAVA_HOME="${JAVA_HOME:-$(/usr/libexec/java_home -v 17)}"
+          npm run android:build
+    artifacts:
+      - src-tauri/gen/android/app/build/outputs/**/*.apk
+      - src-tauri/gen/android/app/build/outputs/**/*.aab
