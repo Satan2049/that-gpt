@@ -1,5 +1,8 @@
-import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
+import ReactMarkdown from "react-markdown";
 import { MarkdownCodeBlock } from "./MarkdownCodeBlock";
 
 type Props = {
@@ -9,7 +12,8 @@ type Props = {
 export function MessageMarkdown({ content }: Props) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
       components={{
         a: ({ href, children }) => (
           <a href={href} target="_blank" rel="noopener noreferrer">
@@ -33,7 +37,7 @@ export function MessageMarkdown({ content }: Props) {
           <div className="markdown-table-wrap">
             <table>{children}</table>
           </div>
-        ),
+        )
       }}
     >
       {content}

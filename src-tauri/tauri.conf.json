@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ChatNest",
-  "version": "2.0.0",
-  "identifier": "com.chatnest.desktop",
+  "productName": "ThatGPT",
+  "version": "2.2.0",
+  "identifier": "com.thatgpt.desktop",
   "build": {
     "frontendDist": "../client/dist",
     "devUrl": "http://localhost:5173",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "ChatNest",
+        "title": "ThatGPT",
         "width": 1200,
         "height": 800,
         "resizable": true
@@ -27,10 +27,10 @@
   "bundle": {
     "active": true,
     "category": "Productivity",
-    "copyright": "Copyright © 2026 ChatNest contributors",
-    "shortDescription": "Desktop chat for OpenAI-compatible APIs",
-    "longDescription": "ChatNest is a local-first desktop chat client with prompt presets, vision support, and JSON file storage.",
-    "homepage": "https://github.com/chatnest/chat-nest",
+    "copyright": "Copyright © 2026 ThatGPT contributors",
+    "shortDescription": "Local ChatGPT-style desktop chat",
+    "longDescription": "ThatGPT is a local-first desktop chat client for OpenAI-compatible APIs and Ollama, with prompt presets, vision support, and JSON file storage.",
+    "homepage": "https://github.com/Satan2049/that-gpt",
     "targets": ["nsis"],
     "icon": [
       "icons/32x32.png",

@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.0.x   | Yes       |
-| < 1.0   | No        |
+| 2.2.x   | Yes       |
+| < 2.2   | No        |
 
 Security fixes are applied to the latest release on the `main` branch.
 
@@ -16,7 +16,7 @@ Security fixes are applied to the latest release on the `main` branch.
 Instead:
 
 1. Email the maintainers at **mohammad161186@gmail.com**
-   — or use [GitHub Private Vulnerability Reporting](https://github.com/Satan2049/chat-nest/security/advisories/new) if enabled.
+   — or use [GitHub Private Vulnerability Reporting](https://github.com/Satan2049/that-gpt/security/advisories/new) if enabled.
 2. Include:
    - Description of the issue and impact
    - Steps to reproduce
@@ -27,7 +27,7 @@ We aim to acknowledge reports within **72 hours** and provide a fix timeline whe
 
 ## Threat model
 
-ChatNest is a **local-first single-user desktop app**:
+ThatGPT is a **local-first single-user desktop app**:
 
 - No built-in authentication or multi-user access control
 - API keys are stored in a local `.env` file in the app data directory
@@ -51,7 +51,7 @@ ChatNest is a **local-first single-user desktop app**:
 
 ## User recommendations
 
-- Keep `AI_API_KEY` only in `%APPDATA%\com.chatnest.desktop\.env` — never in the repo or chat exports
+- Keep `AI_API_KEY` only in `%APPDATA%\com.thatgpt.desktop\.env` — never in the repo or chat exports
 - Verify release downloads using [docs/TRUST.md](docs/TRUST.md)
 - Prefer building from source for maximum assurance
 - Do not run unsigned binaries from untrusted mirrors
@@ -64,4 +64,4 @@ When a fix is available:
 2. Advisory is published with credit to the reporter (unless anonymity is requested)
 3. `SHA256.txt` is regenerated for the new release
 
-Thank you for helping keep ChatNest secure.
+Thank you for helping keep ThatGPT secure.

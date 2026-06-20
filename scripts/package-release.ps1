@@ -28,9 +28,9 @@ $Product = $conf.productName
 $Version = $conf.version
 $Tag = "$Product-$Version-windows-x64"
 
-$portableExe = Join-Path $PortableDir "ChatNest.exe"
+$portableExe = Join-Path $PortableDir "ThatGPT.exe"
 if (-not (Test-Path $portableExe)) {
-  $portableExe = Join-Path $PortableDir "chat-nest.exe"
+  $portableExe = Join-Path $PortableDir "that-gpt.exe"
 }
 if (-not (Test-Path $portableExe)) {
   throw "Portable executable not found. Run 'npm run build' first."

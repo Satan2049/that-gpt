@@ -1,142 +1,158 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { useChatStore } from "../store/chatStore";
+
+export type ConversationListHandle = {
+  focusSearch: () => void;
+};
 
 type Props = {
   onNavigate?: () => void;
+  showSearch?: boolean;
 };
 
-export function ConversationList({ onNavigate }: Props) {  const summaries = useChatStore((s) => s.summaries);
-  const activeId = useChatStore((s) => s.activeConversationId);
-  const loadingList = useChatStore((s) => s.loadingList);
-  const searchQuery = useChatStore((s) => s.searchQuery);
-  const selectConversation = useChatStore((s) => s.selectConversation);
-  const createConversation = useChatStore((s) => s.createConversation);
-  const deleteConversation = useChatStore((s) => s.deleteConversation);
-  const searchConversations = useChatStore((s) => s.searchConversations);
-  const renameConversation = useChatStore((s) => s.renameConversation);
-  const loadConversations = useChatStore((s) => s.loadConversations);
+export const ConversationList = forwardRef<ConversationListHandle, Props>(
+  function ConversationList({ onNavigate, showSearch = false }, ref) {
+    const summaries = useChatStore((s) => s.summaries);
+    const activeId = useChatStore((s) => s.activeConversationId);
+    const loadingList = useChatStore((s) => s.loadingList);
+    const searchQuery = useChatStore((s) => s.searchQuery);
+    const selectConversation = useChatStore((s) => s.selectConversation);
+    const deleteConversation = useChatStore((s) => s.deleteConversation);
+    const searchConversations = useChatStore((s) => s.searchConversations);
+    const renameConversation = useChatStore((s) => s.renameConversation);
+    const loadConversations = useChatStore((s) => s.loadConversations);
 
-  const [query, setQuery] = useState("");
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState("");
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const [query, setQuery] = useState("");
+    const [renamingId, setRenamingId] = useState<string | null>(null);
+    const [renameValue, setRenameValue] = useState("");
 
-  useEffect(() => {
-    setQuery(searchQuery);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (query.trim() === searchQuery.trim()) return;
-      if (query.trim()) {
-        void searchConversations(query);
-      } else {
-        void loadConversations();
+    useImperativeHandle(ref, () => ({
+      focusSearch: () => {
+        searchInputRef.current?.focus();
       }
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [query, searchQuery, searchConversations, loadConversations]);
+    }));
 
-  const startRename = (id: string, title: string) => {
-    setRenamingId(id);
-    setRenameValue(title);
-  };
+    useEffect(() => {
+      setQuery(searchQuery);
+    }, [searchQuery]);
 
-  const commitRename = async (id: string) => {
-    const title = renameValue.trim();
-    setRenamingId(null);
-    if (!title) return;
-    await renameConversation(id, title);
-  };
+    useEffect(() => {
+      if (showSearch) {
+        searchInputRef.current?.focus();
+      }
+    }, [showSearch]);
 
-  const confirmDelete = (id: string, title: string) => {
-    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    void deleteConversation(id);
-  };
+    useEffect(() => {
+      const timer = window.setTimeout(() => {
+        if (query.trim() === searchQuery.trim()) return;
+        if (query.trim()) {
+          void searchConversations(query);
+        } else {
+          void loadConversations();
+        }
+      }, 250);
+      return () => window.clearTimeout(timer);
+    }, [query, searchQuery, searchConversations, loadConversations]);
 
-  const handleSelect = (id: string) => {
-    void selectConversation(id);
-    onNavigate?.();
-  };
+    const startRename = (id: string, title: string) => {
+      setRenamingId(id);
+      setRenameValue(title);
+    };
 
-  const handleCreate = () => {
-    void createConversation();
-    onNavigate?.();
-  };
-  return (
-    <div className="conversation-list">
-      <div className="sidebar-actions">
-        <button type="button" className="btn-primary" onClick={handleCreate}>
-          New chat
-        </button>
+    const commitRename = async (id: string) => {
+      const title = renameValue.trim();
+      setRenamingId(null);
+      if (!title) return;
+      await renameConversation(id, title);
+    };
+
+    const confirmDelete = (id: string, title: string) => {
+      if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+      void deleteConversation(id);
+    };
+
+    const handleSelect = (id: string) => {
+      void selectConversation(id);
+      onNavigate?.();
+    };
+
+    return (
+      <div className="conversation-list">
+        {showSearch ? (
+          <input
+            ref={searchInputRef}
+            type="search"
+            className="conversation-search"
+            placeholder="Search chats…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search conversations"
+          />
+        ) : null}
+
+        {loadingList ? (
+          <div className="sidebar-placeholder">Loading…</div>
+        ) : summaries.length === 0 ? (
+          <div className="sidebar-placeholder">
+            {query.trim() ? "No matches." : "No conversations yet."}
+          </div>
+        ) : (
+          <ul className="conversation-items">
+            {summaries.map((item) => (
+              <li
+                key={item.id}
+                className={item.id === activeId ? "conversation-item active" : "conversation-item"}
+              >
+                {renamingId === item.id ? (
+                  <input
+                    type="text"
+                    className="conversation-rename-input"
+                    value={renameValue}
+                    maxLength={200}
+                    autoFocus
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void commitRename(item.id);
+                      if (e.key === "Escape") setRenamingId(null);
+                    }}
+                    onBlur={() => void commitRename(item.id)}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="conversation-select"
+                    onClick={() => handleSelect(item.id)}
+                    onDoubleClick={() => startRename(item.id, item.title)}
+                  >
+                    <span className="conversation-title">{item.title}</span>
+                  </button>
+                )}
+                <div className="conversation-item-actions">
+                  <button
+                    type="button"
+                    className="conversation-rename"
+                    title="Rename conversation"
+                    aria-label="Rename conversation"
+                    onClick={() => startRename(item.id, item.title)}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    className="conversation-delete"
+                    title="Delete conversation"
+                    aria-label="Delete conversation"
+                    onClick={() => confirmDelete(item.id, item.title)}
+                  >
+                    ×
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-
-      <input
-        type="search"
-        className="conversation-search"
-        placeholder="Search conversations…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        aria-label="Search conversations"
-      />
-
-      {loadingList ? (
-        <div className="sidebar-placeholder">Loading…</div>
-      ) : summaries.length === 0 ? (
-        <div className="sidebar-placeholder">
-          {query.trim() ? "No matches." : "No conversations yet. Create one to start."}
-        </div>
-      ) : (
-        <ul className="conversation-items">
-          {summaries.map((item) => (
-            <li
-              key={item.id}
-              className={item.id === activeId ? "conversation-item active" : "conversation-item"}
-            >
-              {renamingId === item.id ? (
-                <input
-                  type="text"
-                  className="conversation-rename-input"
-                  value={renameValue}
-                  maxLength={200}
-                  autoFocus
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void commitRename(item.id);
-                    if (e.key === "Escape") setRenamingId(null);
-                  }}
-                  onBlur={() => void commitRename(item.id)}
-                />
-              ) : (
-                <button
-                  type="button"
-                  className="conversation-select"
-                  onClick={() => handleSelect(item.id)}
-                >
-                  <span className="conversation-title">{item.title}</span>
-                </button>
-              )}
-              <button
-                type="button"
-                className="conversation-rename"
-                title="Rename conversation"
-                aria-label="Rename conversation"
-                onClick={() => startRename(item.id, item.title)}
-              >
-                ✎
-              </button>
-              <button
-                type="button"
-                className="conversation-delete"
-                title="Delete conversation"
-                aria-label="Delete conversation"
-                onClick={() => confirmDelete(item.id, item.title)}
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+    );
+  }
+);

@@ -1,10 +1,10 @@
-# Contributing to ChatNest
+# Contributing to ThatGPT
 
-Thank you for your interest in contributing. ChatNest is a desktop chat client built with **Tauri 2**, **Rust**, and **React**.
+Thank you for your interest in contributing. ThatGPT is a **Windows desktop** chat client built with **Tauri 2**, **Rust**, and **React**.
 
 ## Ways to contribute
 
-- Report bugs and request features via [GitHub Issues](https://github.com/Satan2049/chat-nest/issues)
+- Report bugs and request features via [GitHub Issues](https://github.com/Satan2049/that-gpt/issues)
 - Submit pull requests for bug fixes, tests, or documentation
 - Improve translations, UX copy, or accessibility
 - Verify release binaries and share VirusTotal / SHA256 feedback ([docs/TRUST.md](docs/TRUST.md))
@@ -18,12 +18,12 @@ Thank you for your interest in contributing. ChatNest is a desktop chat client b
 - Windows: WebView2 runtime (usually preinstalled on Windows 11)
 
 ```bash
-git clone https://github.com/Satan2049/chat-nest.git
-cd chat-nest
+git clone https://github.com/Satan2049/that-gpt.git
+cd that-gpt
 npm install
 ```
 
-Create config at `%APPDATA%\com.chatnest.desktop\.env` (see [src-tauri/.env.example](src-tauri/.env.example)).
+Create config at `%APPDATA%\com.thatgpt.desktop\.env` (see [src-tauri/.env.example](src-tauri/.env.example)).
 
 ```bash
 npm run dev          # Desktop app with hot reload

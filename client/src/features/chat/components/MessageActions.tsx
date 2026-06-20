@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "../../../shared/components/toastStore";
 
 type Props = {
   content: string;
@@ -20,6 +21,7 @@ export function MessageActions({
     try {
       await navigator.clipboard.writeText(content);
       setCopied(true);
+      toast("Message copied");
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       // ignore

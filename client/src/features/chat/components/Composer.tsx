@@ -1,10 +1,12 @@
 import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
   type ChangeEvent,
   type FormEvent,
-  type KeyboardEvent,
-  useEffect,
-  useRef,
-  useState
+  type KeyboardEvent
 } from "react";
 import {
   attachmentKindFromMime,
@@ -24,12 +26,19 @@ type PendingAttachment = {
   kind: "image" | "audio" | "text" | "pdf";
 };
 
-const TEXTAREA_MIN_HEIGHT_PX = 42;
+export type ComposerHandle = {
+  focus: () => void;
+};
+
+const TEXTAREA_MIN_HEIGHT_PX = 24;
 const TEXTAREA_MAX_HEIGHT_PX = 200;
 
-export function Composer() {
+const DRAFT_PREFIX = "thatgpt:draft:";
+
+export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const attachMenuRef = useRef<HTMLDetailsElement>(null);
   const pendingRef = useRef<PendingAttachment[]>([]);
   const [text, setText] = useState("");
   const [pending, setPending] = useState<PendingAttachment[]>([]);
@@ -43,6 +52,28 @@ export function Composer() {
   const { maxCount: maxAttachments } = useImageLimits();
 
   pendingRef.current = pending;
+
+  useImperativeHandle(ref, () => ({
+    focus: () => textareaRef.current?.focus()
+  }));
+
+  useEffect(() => {
+    if (!activeId) {
+      setText("");
+      return;
+    }
+    setText(localStorage.getItem(`${DRAFT_PREFIX}${activeId}`) ?? "");
+    textareaRef.current?.focus();
+  }, [activeId]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    if (text.trim()) {
+      localStorage.setItem(`${DRAFT_PREFIX}${activeId}`, text);
+    } else {
+      localStorage.removeItem(`${DRAFT_PREFIX}${activeId}`);
+    }
+  }, [activeId, text]);
 
   useEffect(() => {
     return () => {
@@ -80,8 +111,7 @@ export function Composer() {
     });
   };
 
-  const onPickFiles = (e: ChangeEvent<HTMLInputElement>) => {
-    const incoming = Array.from(e.target.files ?? []);
+  const addFiles = (incoming: File[]) => {
     setLocalError(null);
     if (!incoming.length) return;
 
@@ -95,9 +125,7 @@ export function Composer() {
           break;
         }
         if (!isAllowedAttachmentMime(file.type)) {
-          setLocalError(
-            "Unsupported file type. Use images, audio, PDF, or text files."
-          );
+          setLocalError("Unsupported file type. Use images, audio, PDF, or text files.");
           continue;
         }
         const maxBytes = maxBytesForMime(file.type);
@@ -117,7 +145,12 @@ export function Composer() {
       }
       return next;
     });
+  };
+
+  const onPickFiles = (e: ChangeEvent<HTMLInputElement>) => {
+    addFiles(Array.from(e.target.files ?? []));
     e.target.value = "";
+    attachMenuRef.current?.removeAttribute("open");
   };
 
   const submitMessage = async () => {
@@ -146,6 +179,7 @@ export function Composer() {
       });
       setPending([]);
       setText("");
+      if (activeId) localStorage.removeItem(`${DRAFT_PREFIX}${activeId}`);
     } finally {
       setPreparing(false);
     }
@@ -163,8 +197,25 @@ export function Composer() {
     }
   };
 
+  const openFilePicker = (accept?: string) => {
+    const input = fileInputRef.current;
+    if (!input) return;
+    input.accept = accept ?? FILE_INPUT_ACCEPT;
+    input.click();
+  };
+
   return (
-    <form className="composer composer-form" onSubmit={onSubmit}>
+    <form
+      className="composer composer-form composer-pill"
+      onSubmit={onSubmit}
+      onDragOver={(e) => {
+        e.preventDefault();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        addFiles(Array.from(e.dataTransfer.files ?? []));
+      }}
+    >
       {localError ? (
         <div className="composer-local-error" role="status">
           {localError}
@@ -207,44 +258,71 @@ export function Composer() {
         onChange={onPickFiles}
         disabled={disabled || pending.length >= maxAttachments}
       />
-      <div className="composer-row">
-        <button
-          type="button"
-          className="composer-attach-btn"
-          disabled={disabled || pending.length >= maxAttachments}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          Attach
-        </button>
+
+      <div className="composer-pill-row">
+        <details ref={attachMenuRef} className="composer-attach-menu">
+          <summary className="composer-attach-btn" aria-label="Add attachments">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+            </svg>
+          </summary>
+          <div className="composer-attach-panel">
+            <button type="button" onClick={() => openFilePicker()} disabled={disabled}>
+              Upload file
+            </button>
+            <button
+              type="button"
+              onClick={() => openFilePicker("image/jpeg,image/png,image/webp,image/gif")}
+              disabled={disabled}
+            >
+              Upload image
+            </button>
+          </div>
+        </details>
+
         <textarea
           ref={textareaRef}
           className="composer-textarea"
           value={text}
           onChange={(ev) => setText(ev.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={
-            activeId
-              ? "Message… (Enter to send, Shift+Enter for newline)"
-              : "Select or create a conversation"
-          }
+          onPaste={(e) => {
+            const files = Array.from(e.clipboardData.files ?? []);
+            if (files.length > 0) {
+              e.preventDefault();
+              addFiles(files);
+            }
+          }}
+          placeholder={activeId ? "Ask anything" : "Select or create a conversation"}
           disabled={disabled}
           autoComplete="off"
           rows={1}
         />
+
         {sending ? (
           <button
             type="button"
-            className="composer-stop-btn"
+            className="composer-send-btn composer-stop-btn"
+            aria-label="Stop generating"
             onClick={() => void stopGeneration()}
           >
-            Stop
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="1" />
+            </svg>
           </button>
         ) : (
-          <button type="submit" disabled={!canSubmit}>
-            {preparing ? "Preparing…" : "Send"}
+          <button
+            type="submit"
+            className="composer-send-btn"
+            disabled={!canSubmit}
+            aria-label="Send message"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         )}
       </div>
     </form>
   );
-}
+});

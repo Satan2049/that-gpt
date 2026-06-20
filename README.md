@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="assets/logo.svg" alt="ChatNest logo" width="96" height="96" />
+<img src="assets/logo.svg" alt="ThatGPT logo" width="96" height="96" />
 
-# ChatNest
+# ThatGPT
 
-**Local-first desktop chat for OpenAI-compatible APIs**
+**Local ChatGPT-style desktop chat for OpenAI-compatible APIs and Ollama**
 
-[![Version](https://img.shields.io/badge/version-2.0.0-3f6fff?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.2.0-6366f1?style=flat-square)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-3f6fff?style=flat-square)](LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-2-3f6fff?style=flat-square&logo=tauri&logoColor=white)](src-tauri/)
 [![Rust](https://img.shields.io/badge/Rust-2021-3f6fff?style=flat-square&logo=rust&logoColor=white)](src-tauri/)
@@ -15,9 +15,9 @@
 
 [Features](#features) · [Screenshots](#screenshots) · [Installation](#installation) · [Development](#development) · [Build](#build) · [Changelog](CHANGELOG.md) · [Trust](#trust) · [Contributing](CONTRIBUTING.md)
 
-**[Landing page](https://satan2049.github.io/chat-nest/)** · **[v2.0.0 release notes](docs/RELEASE_v2.0.0.md)**
+**[Landing page](https://satan2049.github.io/that-gpt/)** · **[v2.2.0 release notes](docs/RELEASE_v2.2.0.md)**
 
-<img src="assets/banner.png" alt="ChatNest banner" width="100%" />
+<img src="assets/banner.png" alt="ThatGPT banner" width="100%" />
 
 </div>
 
@@ -25,7 +25,7 @@
 
 ## Description
 
-ChatNest **v2** is an open-source **Windows desktop** chat client. Conversations, prompt presets, and multimodal attachments live in a redesigned React UI. A **Rust + Tauri** backend stores JSON on disk and proxies all model requests so your API key never enters the webview.
+**ThatGPT** is an open-source **Windows desktop** chat client with a ChatGPT-inspired UI. Conversations, prompt presets, and multimodal attachments live in a React UI. A **Rust + Tauri** backend stores JSON on disk and proxies all model requests so your API key never enters the webview.
 
 **Design goals:** credentials stay in the desktop shell, no database overhead, any OpenAI-compatible endpoint.
 
@@ -57,7 +57,7 @@ ChatNest **v2** is an open-source **Windows desktop** chat client. Conversations
 </table>
 
 <p align="center">
-  <img src="assets/screenshots/demo.gif" alt="ChatNest demo" width="720" />
+  <img src="assets/screenshots/demo.gif" alt="ThatGPT demo" width="720" />
   <br />
   <sub>Demo GIF</sub>
 </p>
@@ -66,17 +66,17 @@ ChatNest **v2** is an open-source **Windows desktop** chat client. Conversations
 
 ### Download (recommended)
 
-1. Open **[GitHub Releases — v2.0.0](https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0)**.
+1. Open **[GitHub Releases — v2.2.0](https://github.com/Satan2049/that-gpt/releases/tag/v2.2.0)**.
 2. Download **portable** `.exe` or **NSIS setup** installer for Windows x64.
 3. Verify checksums — [`SHA256.txt`](SHA256.txt) and [docs/TRUST.md](docs/TRUST.md).
-4. *(Optional)* Review [VirusTotal reports (v2.0.0)](docs/TRUST.md#published-reports-v200).
+4. *(Optional)* Review [VirusTotal reports (v2.2.0)](docs/TRUST.md#published-reports-v220).
 
 ### Configure API access
 
 Open **Settings** in the app (header) to set your API key, base URL, default model, system prompt, timeout, and retries. Settings are saved to:
 
 ```text
-%APPDATA%\com.chatnest.desktop\.env
+%APPDATA%\com.thatgpt.desktop\.env
 ```
 
 You can also edit that file manually — see [`src-tauri/.env.example`](src-tauri/.env.example):
@@ -95,13 +95,13 @@ AI_MAX_RETRIES=2
 Requires Node.js 20+, Rust, and [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) on Windows.
 
 ```bash
-git clone https://github.com/Satan2049/chat-nest.git
-cd chat-nest
+git clone https://github.com/Satan2049/that-gpt.git
+cd that-gpt
 npm install
 npm run build
 ```
 
-Portable binary: `src-tauri/target/release/bundle/portable/ChatNest.exe`
+Portable binary: `src-tauri/target/release/bundle/portable/ThatGPT.exe`
 
 ## Development
 
@@ -137,13 +137,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for pull request guidelines.
 | `npm run release:package` | Stage `release/` folder with ZIPs |
 | `npm run release:hashes` | Regenerate `SHA256.txt` from built artifacts |
 | `npm run clean` | Delete `target/`, `client/dist/`, caches, logs |
-| `npm run clean:all` | Also remove `node_modules`, `release/`, Android gen |
+| `npm run clean:all` | Also remove `node_modules` and `release/` |
 
 Artifacts:
 
 ```text
-src-tauri/target/release/bundle/portable/ChatNest.exe
-src-tauri/target/release/bundle/nsis/ChatNest_*_x64-setup.exe
+src-tauri/target/release/bundle/portable/ThatGPT.exe
+src-tauri/target/release/bundle/nsis/ThatGPT_*_x64-setup.exe
 release/                                    # after release:package
 SHA256.txt                                  # after release:hashes
 ```
@@ -156,7 +156,7 @@ React UI (Vite)
       ▼
 Rust services ──► OpenAI-compatible API
       │
-      └── JSON: %APPDATA%/com.chatnest.desktop/data/
+      └── JSON: %APPDATA%/com.thatgpt.desktop/data/
 ```
 
 Details: [`docs/repository-intelligence.md`](docs/repository-intelligence.md)
@@ -173,11 +173,11 @@ Details: [`docs/repository-intelligence.md`](docs/repository-intelligence.md)
 
 ## Trust
 
-- Verify downloads: [docs/TRUST.md](docs/TRUST.md)
-- v2.0.0 VirusTotal: [NSIS](https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1) · [Portable](https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1)
+- Verify downloads: [docs/TRUST.md](docs/TRUST.md) — v2.2.0 VirusTotal links added after release build
+- Historical v2.0.0 (ChatNest): [NSIS](https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1) · [Portable](https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1)
 - Report security issues: [SECURITY.md](SECURITY.md)
 - Checksums: [`SHA256.txt`](SHA256.txt)
 
 ## License
 
-[MIT](LICENSE) © ChatNest contributors
+[MIT](LICENSE) © ThatGPT contributors

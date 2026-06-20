@@ -95,7 +95,7 @@ impl AppConfig {
 
         let env_path = config_dir.join(".env");
         let contents = format!(
-            "# ChatNest settings — edited via the app or manually\n\
+            "# ThatGPT settings — edited via the app or manually\n\
              AI_API_KEY={}\n\
              AI_BASE_URL={}\n\
              AI_MODEL={}\n\

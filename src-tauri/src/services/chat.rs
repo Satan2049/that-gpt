@@ -339,9 +339,44 @@ async fn run_completion_loop(
         let api_messages = build_api_messages(state, conversation, preset);
         let model = resolve_model(state, preset, has_direct_vision);
 
+        if !conversation_may_need_tools(conversation) {
+            let app_handle = app.clone();
+            let stream_conversation_id = conversation_id.to_string();
+            let stream_message_id = assistant_id.clone();
+            let stream_result = super::ai::create_chat_completion_stream(
+                state,
+                api_messages,
+                Some(model.as_str()),
+                preset.map(|p| p.temperature),
+                preset.map(|p| p.max_tokens),
+                Some(cancel.clone()),
+                move |delta| {
+                    if delta.is_empty() {
+                        return;
+                    }
+                    let _ = app_handle.emit(
+                        "chat-stream-chunk",
+                        ChatStreamChunkPayload {
+                            conversation_id: stream_conversation_id.clone(),
+                            message_id: stream_message_id.clone(),
+                            delta: delta.to_string(),
+                        },
+                    );
+                },
+            )
+            .await?;
+
+            if stream_result.cancelled {
+                was_cancelled = true;
+            } else {
+                final_content = stream_result.content;
+            }
+            break;
+        }
+
         let result = super::ai::create_chat_completion_non_stream(
             state,
-            api_messages,
+            api_messages.clone(),
             Some(model.as_str()),
             preset.map(|p| p.temperature),
             preset.map(|p| p.max_tokens),
@@ -383,8 +418,37 @@ async fn run_completion_loop(
             continue;
         }
 
-        final_content = result.content;
-        emit_content_chunks(app, conversation_id, &assistant_id, &final_content);
+        let app_handle = app.clone();
+        let stream_conversation_id = conversation_id.to_string();
+        let stream_message_id = assistant_id.clone();
+        let stream_result = super::ai::create_chat_completion_stream(
+            state,
+            api_messages,
+            Some(model.as_str()),
+            preset.map(|p| p.temperature),
+            preset.map(|p| p.max_tokens),
+            Some(cancel.clone()),
+            move |delta| {
+                if delta.is_empty() {
+                    return;
+                }
+                let _ = app_handle.emit(
+                    "chat-stream-chunk",
+                    ChatStreamChunkPayload {
+                        conversation_id: stream_conversation_id.clone(),
+                        message_id: stream_message_id.clone(),
+                        delta: delta.to_string(),
+                    },
+                );
+            },
+        )
+        .await?;
+
+        if stream_result.cancelled {
+            was_cancelled = true;
+        } else {
+            final_content = stream_result.content;
+        }
         break;
     }
 
@@ -432,23 +496,12 @@ async fn run_completion_loop(
     })
 }
 
-fn emit_content_chunks(app: &AppHandle, conversation_id: &str, message_id: &str, content: &str) {
-    if content.is_empty() {
-        return;
-    }
-    const CHUNK_CHARS: usize = 48;
-    let chars: Vec<char> = content.chars().collect();
-    for chunk in chars.chunks(CHUNK_CHARS) {
-        let delta: String = chunk.iter().collect();
-        let _ = app.emit(
-            "chat-stream-chunk",
-            ChatStreamChunkPayload {
-                conversation_id: conversation_id.to_string(),
-                message_id: message_id.to_string(),
-                delta,
-            },
-        );
-    }
+fn conversation_may_need_tools(conversation: &Conversation) -> bool {
+    conversation.messages.iter().any(|m| {
+        matches!(m.role, MessageRole::User)
+            && (m.attachments.as_ref().is_some_and(|a| !a.is_empty())
+                || m.images.as_ref().is_some_and(|i| !i.is_empty()))
+    })
 }
 
 fn resolve_model(state: &AppState, preset: Option<&PromptPreset>, has_direct_vision: bool) -> String {

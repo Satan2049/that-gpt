@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ChatNest v2 — Windows desktop chat for OpenAI-compatible APIs. Markdown, agent tools, JSON storage, Rust + Tauri."
+      content="ThatGPT — local ChatGPT-style desktop chat for OpenAI-compatible APIs and Ollama."
     />
     <meta name="theme-color" content="#3f6fff" />
-    <meta property="og:title" content="ChatNest v2" />
+    <meta property="og:title" content="ThatGPT" />
     <meta
       property="og:description"
       content="Desktop chat for OpenAI-compatible APIs. Redesigned UI, markdown, agent tools, local JSON storage."
     />
-    <title>ChatNest v2</title>
+    <title>ThatGPT</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -27,16 +27,15 @@
       <header class="topbar">
         <a class="brand" href="./">
           <span class="brand-mark" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M4 5.5C4 4.12 5.12 3 6.5 3h5C12.88 3 14 4.12 14 5.5v4.25c0 1.38-1.12 2.5-2.5 2.5H9.2L6.5 15v-2.75H6.5C5.12 12.25 4 11.13 4 9.75V5.5Z"
-                fill="#fff"
-              />
+            <svg width="18" height="18" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="64" height="64" rx="16" fill="#6366F1"/>
+              <path d="M28 22H36V46H28V22Z" fill="#0D0D0D"/>
+              <path d="M22 22H42V28H22V22Z" fill="#0D0D0D"/>
             </svg>
           </span>
           <span>
-            <span class="brand-name">ChatNest</span>
-            <span class="brand-tag">Desktop · OpenAI-compatible</span>
+            <span class="brand-name">ThatGPT</span>
+            <span class="brand-tag">Local · OpenAI-compatible · Ollama</span>
           </span>
         </a>
         <div class="topbar-actions">
@@ -51,7 +50,7 @@
           <button type="button" class="btn btn-ghost" id="theme-toggle" aria-label="Toggle color theme">
             Dark mode
           </button>
-          <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0">Download v2.0.0</a>
+          <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0">Download v2.0.0</a>
         </div>
       </header>
 
@@ -67,19 +66,19 @@
             <p class="section-title">Product overview</p>
             <h1>Desktop chat, redesigned — credentials stay in Rust</h1>
             <p class="hero-lead">
-              ChatNest v2 pairs a refreshed React UI with a Rust + Tauri backend. Markdown replies,
+              ThatGPT pairs a ChatGPT-inspired React UI with a Rust + Tauri backend. Markdown replies,
               agent tooling, multimodal attachments, and a responsive drawer layout — while
               conversations and presets persist as JSON on disk.
             </p>
             <div class="hero-cta">
-              <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0">Download v2.0.0</a>
-              <a class="btn" href="https://github.com/Satan2049/chat-nest">GitHub</a>
+              <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0">Download v2.0.0</a>
+              <a class="btn" href="https://github.com/Satan2049/that-gpt">GitHub</a>
             </div>
           </article>
           <figure class="panel hero-preview">
             <img
-              src="https://raw.githubusercontent.com/Satan2049/chat-nest/main/assets/screenshots/screenshot-chat.png"
-              alt="ChatNest v2 chat interface"
+              src="https://raw.githubusercontent.com/Satan2049/that-gpt/main/assets/screenshots/screenshot-chat.png"
+              alt="ThatGPT chat interface"
               width="640"
               height="360"
               style="width: 100%; height: auto; display: block; border-radius: 8px"
@@ -179,19 +178,19 @@
           <div class="panel" style="padding: 1.25rem">
             <p style="margin-top: 0">
               Pre-built binaries on
-              <a href="https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0">GitHub Releases v2.0.0</a>:
+              <a href="https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0">GitHub Releases v2.0.0</a>:
               portable <code>.exe</code> or NSIS setup installer.
             </p>
             <p>
-              Verify with <a href="https://github.com/Satan2049/chat-nest/blob/main/SHA256.txt">SHA256.txt</a> and
+              Verify with <a href="https://github.com/Satan2049/that-gpt/blob/main/SHA256.txt">SHA256.txt</a> and
               <a href="./TRUST.md">Trust &amp; verification</a>.
             </p>
             <p>
               Full release notes:
-              <a href="https://github.com/Satan2049/chat-nest/blob/main/docs/RELEASE_v2.0.0.md">RELEASE_v2.0.0.md</a>
+              <a href="https://github.com/Satan2049/that-gpt/blob/main/docs/RELEASE_v2.0.0.md">RELEASE_v2.0.0.md</a>
             </p>
             <div class="hero-cta" style="margin-top: 1rem">
-              <a class="btn btn-primary" href="https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0">Get ChatNest v2</a>
+              <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0">Get ThatGPT</a>
               <a class="btn" href="./TRUST.md">Trust &amp; verification</a>
             </div>
           </div>
@@ -242,8 +241,8 @@
                 <span class="step-num">Option B</span>
                 <span class="step-title">Build from source</span>
               </div>
-              <pre><code>git clone https://github.com/Satan2049/chat-nest.git
-cd chat-nest
+              <pre><code>git clone https://github.com/Satan2049/that-gpt.git
+cd that-gpt
 npm install
 npm run build</code></pre>
             </li>
@@ -253,7 +252,7 @@ npm run build</code></pre>
                 <span class="step-title">API access</span>
               </div>
               <pre><code># Open Settings in the app, or edit:
-# %APPDATA%\com.chatnest.desktop\.env
+# %APPDATA%\com.thatgpt.desktop\.env
 #
 # AI_API_KEY, AI_BASE_URL, AI_MODEL, …</code></pre>
             </li>
@@ -267,27 +266,27 @@ npm run clean   # remove build artifacts when needed</code></pre>
             </li>
           </ol>
           <div class="notice" role="note">
-            <strong>Security:</strong> ChatNest is a single-user local desktop app. Report vulnerabilities via
-            <a href="https://github.com/Satan2049/chat-nest/blob/main/SECURITY.md">SECURITY.md</a>.
+            <strong>Security:</strong> ThatGPT is a single-user local desktop app. Report vulnerabilities via
+            <a href="https://github.com/Satan2049/that-gpt/blob/main/SECURITY.md">SECURITY.md</a>.
           </div>
         </section>
       </main>
 
       <footer class="site-footer">
-        <span>MIT License · ChatNest v2.0.0 · Rust + Tauri 2</span>
+        <span>MIT License · ThatGPT v2.0.0 · Rust + Tauri 2</span>
         <span>
-          <a href="https://github.com/Satan2049/chat-nest">GitHub</a>
+          <a href="https://github.com/Satan2049/that-gpt">GitHub</a>
           ·
           <a href="./TRUST.md">Trust</a>
           ·
-          <a href="https://github.com/Satan2049/chat-nest/blob/main/CHANGELOG.md">Changelog</a>
+          <a href="https://github.com/Satan2049/that-gpt/blob/main/CHANGELOG.md">Changelog</a>
         </span>
       </footer>
     </div>
 
     <script>
       (function () {
-        var KEY = "chatnest-theme";
+        var KEY = "thatgpt-theme";
         var root = document.documentElement;
         var btn = document.getElementById("theme-toggle");
 

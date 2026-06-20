@@ -1,0 +1,18 @@
+<svg width="1200" height="400" viewBox="0 0 1200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D0D0D"/>
+      <stop offset="1" stop-color="#171717"/>
+    </linearGradient>
+    <linearGradient id="bubble" x1="80" y1="60" x2="280" y2="340" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <path d="M80 120C80 96.8629 98.8629 78 122 78H238C261.137 78 280 96.8629 280 120V240C280 263.137 261.137 282 238 282H170L110 330V282H122C98.8629 282 80 263.137 80 240V120Z" fill="url(#bubble)"/>
+  <path d="M170 138H190V270H170V138Z" fill="#0D0D0D"/>
+  <path d="M140 138H220V168H140V138Z" fill="#0D0D0D"/>
+  <text x="320" y="185" fill="#ECECEC" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="72" font-weight="700">ThatGPT</text>
+  <text x="322" y="245" fill="#9B9B9B" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="400">Your AI. Your Models. Your Control.</text>
+</svg>

@@ -1,26 +1,32 @@
-import { useEffect, useState } from "react";
-import { ConversationList } from "../features/chat/components/ConversationList";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ConversationList, type ConversationListHandle } from "../features/chat/components/ConversationList";
 import { MessageList } from "../features/chat/components/MessageList";
-import { Composer } from "../features/chat/components/Composer";
+import { Composer, type ComposerHandle } from "../features/chat/components/Composer";
 import { useChatStore } from "../features/chat/store/chatStore";
-import { PromptPresetPanel } from "../features/prompt/components/PromptPresetPanel";
-import { PromptPresetSelect } from "../features/prompt/components/PromptPresetSelect";
 import { SettingsPanel } from "../features/settings/components/SettingsPanel";
-import { BrandMark } from "../shared/components/BrandMark";
 import { IconButton } from "../shared/components/IconButton";
 import { useMediaQuery } from "../shared/hooks/useMediaQuery";
 import type { Theme } from "../shared/lib/theme";
+import { readSidebarExpanded, writeSidebarExpanded } from "../shared/lib/sidebarState";
+import { HeaderMenu } from "./HeaderMenu";
+import { ModelSelector } from "./ModelSelector";
+import { SidebarFooter, SidebarNav } from "./SidebarNav";
 
 type Props = {
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
-  onToggleTheme: () => void;
 };
 
-export function DesktopShell({ theme, onThemeChange, onToggleTheme }: Props) {
+export function DesktopShell({ theme, onThemeChange }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<string | undefined>();
+  const [sidebarExpanded, setSidebarExpanded] = useState(readSidebarExpanded);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [searchActive, setSearchActive] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const isNarrow = useMediaQuery("(max-width: 900px)");
+  const conversationListRef = useRef<ConversationListHandle>(null);
+  const composerRef = useRef<ComposerHandle>(null);
 
   const activeConversation = useChatStore((s) => s.activeConversation);
   const loadingConversation = useChatStore((s) => s.loadingConversation);
@@ -28,20 +34,57 @@ export function DesktopShell({ theme, onThemeChange, onToggleTheme }: Props) {
   const streamingMessageId = useChatStore((s) => s.streamingMessageId);
   const exporting = useChatStore((s) => s.exporting);
   const exportActiveConversation = useChatStore((s) => s.exportActiveConversation);
+  const createConversation = useChatStore((s) => s.createConversation);
   const error = useChatStore((s) => s.error);
   const clearError = useChatStore((s) => s.clearError);
 
   useEffect(() => {
-    if (!isNarrow) setSidebarOpen(false);
+    if (!isNarrow) return;
+    setMobileDrawerOpen(false);
   }, [isNarrow]);
 
-  const closeSidebar = () => setSidebarOpen(false);
-  const openSidebar = () => setSidebarOpen(true);
+  useEffect(() => {
+    if (isNarrow) return;
+    writeSidebarExpanded(sidebarExpanded);
+  }, [sidebarExpanded, isNarrow]);
+
+  const handleNewChat = useCallback(async () => {
+    await createConversation();
+    composerRef.current?.focus();
+    if (isNarrow) setMobileDrawerOpen(false);
+  }, [createConversation, isNarrow]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchActive(true);
+        conversationListRef.current?.focusSearch();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "o") {
+        e.preventDefault();
+        void handleNewChat();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleNewChat]);
+
+  const handleSearch = () => {
+    setSearchActive(true);
+    conversationListRef.current?.focusSearch();
+  };
+
+  const closeMobileDrawer = () => setMobileDrawerOpen(false);
+  const openMobileDrawer = () => setMobileDrawerOpen(true);
+  const collapseSidebar = () => setSidebarExpanded(false);
+  const expandSidebar = () => setSidebarExpanded(true);
 
   const shellClass = [
     "app-shell",
     isNarrow ? "app-shell--narrow" : "",
-    isNarrow && sidebarOpen ? "app-shell--sidebar-open" : ""
+    isNarrow && mobileDrawerOpen ? "app-shell--sidebar-open" : "",
+    !sidebarExpanded && !isNarrow ? "app-shell--sidebar-collapsed" : ""
   ]
     .filter(Boolean)
     .join(" ");
@@ -50,74 +93,92 @@ export function DesktopShell({ theme, onThemeChange, onToggleTheme }: Props) {
 
   return (
     <div className={shellClass}>
-      {isNarrow && sidebarOpen ? (
+      {isNarrow && mobileDrawerOpen ? (
         <button
           type="button"
           className="sidebar-backdrop"
           aria-label="Close sidebar"
-          onClick={closeSidebar}
+          onClick={closeMobileDrawer}
         />
       ) : null}
 
-      <aside className="sidebar" aria-hidden={isNarrow && !sidebarOpen}>
-        <div className="sidebar-brand">
-          <BrandMark size={40} />
-          <div className="sidebar-brand-text">
-            <span className="sidebar-brand-name">ChatNest</span>
-            <span className="sidebar-brand-tag">v2</span>
-          </div>
-          {isNarrow ? (
-            <IconButton className="sidebar-close" label="Close menu" onClick={closeSidebar}>
+      <aside className="sidebar" aria-hidden={isNarrow && !mobileDrawerOpen}>
+        <div className="sidebar-top">
+          {!isNarrow ? (
+            <IconButton
+              className="sidebar-collapse"
+              label="Collapse sidebar"
+              onClick={collapseSidebar}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
+              </svg>
+            </IconButton>
+          ) : (
+            <IconButton className="sidebar-close" label="Close menu" onClick={closeMobileDrawer}>
               ×
             </IconButton>
-          ) : null}
+          )}
         </div>
 
-        <div className="section-title">Conversations</div>
-        <ConversationList onNavigate={closeSidebar} />
-        <div className="sidebar-divider" />
-        <PromptPresetPanel />
+        <SidebarNav
+          onNewChat={() => void handleNewChat()}
+          onSearch={handleSearch}
+          onOpenMore={() => setMoreOpen((v) => !v)}
+          searchActive={searchActive}
+        />
+
+        {moreOpen ? (
+          <div className="sidebar-more-panel">
+            <button
+              type="button"
+              onClick={() => {
+                setSettingsTab("personalization");
+                setSettingsOpen(true);
+                setMoreOpen(false);
+              }}
+            >
+              Prompt presets
+            </button>
+          </div>
+        ) : null}
+
+        <div className="sidebar-recents">
+          <div className="sidebar-recents-label">Recents</div>
+          <ConversationList
+            ref={conversationListRef}
+            showSearch={searchActive}
+            onNavigate={closeMobileDrawer}
+          />
+        </div>
+
+        <SidebarFooter onOpenSettings={() => setSettingsOpen(true)} />
       </aside>
 
       <main className="main-panel">
         <header className="main-header">
           <div className="header-leading">
             {isNarrow ? (
-              <IconButton className="sidebar-toggle" label="Open menu" onClick={openSidebar}>
+              <IconButton className="sidebar-toggle" label="Open menu" onClick={openMobileDrawer}>
                 ☰
               </IconButton>
+            ) : !sidebarExpanded ? (
+              <IconButton className="sidebar-expand" label="Open sidebar" onClick={expandSidebar}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
+                </svg>
+              </IconButton>
             ) : null}
-            <div className="header-title-block">
-              <h1>{activeConversation?.title ?? "New conversation"}</h1>
-              <PromptPresetSelect />
-            </div>
+            <ModelSelector />
           </div>
           <div className="header-actions">
-            <details className="export-menu">
-              <summary className={canExport ? "" : "disabled"}>Export</summary>
-              <div className="export-menu-panel">
-                <button
-                  type="button"
-                  disabled={!canExport || exporting}
-                  onClick={() => void exportActiveConversation("markdown")}
-                >
-                  Markdown (.md)
-                </button>
-                <button
-                  type="button"
-                  disabled={!canExport || exporting}
-                  onClick={() => void exportActiveConversation("json")}
-                >
-                  JSON (.json)
-                </button>
-              </div>
-            </details>
-            <IconButton label="Toggle theme" onClick={onToggleTheme}>
-              {theme === "light" ? "🌙" : "☀️"}
-            </IconButton>
-            <button type="button" onClick={() => setSettingsOpen(true)}>
-              Settings
-            </button>
+            <HeaderMenu
+              canExport={canExport}
+              exporting={exporting}
+              onExportMarkdown={() => void exportActiveConversation("markdown")}
+              onExportJson={() => void exportActiveConversation("json")}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
           </div>
         </header>
 
@@ -131,23 +192,34 @@ export function DesktopShell({ theme, onThemeChange, onToggleTheme }: Props) {
         ) : null}
 
         <section className="messages-panel">
-          <MessageList
-            messages={activeConversation?.messages ?? []}
-            loading={loadingConversation && !sending}
-            streamingMessageId={streamingMessageId}
-          />
+          <div className="messages-inner">
+            <MessageList
+              messages={activeConversation?.messages ?? []}
+              loading={loadingConversation && !sending}
+              streamingMessageId={streamingMessageId}
+            />
+          </div>
         </section>
 
-        <div className="composer-shell">
-          <Composer />
+        <div className="composer-area">
+          <div className="composer-shell">
+            <Composer ref={composerRef} />
+          </div>
+          <p className="composer-disclaimer">
+            ThatGPT runs on your hardware. It hallucinates locally — verify before deploying to prod.
+          </p>
         </div>
       </main>
 
       <SettingsPanel
         open={settingsOpen}
+        initialTab={settingsTab}
         theme={theme}
         onThemeChange={onThemeChange}
-        onClose={() => setSettingsOpen(false)}
+        onClose={() => {
+          setSettingsOpen(false);
+          setSettingsTab(undefined);
+        }}
       />
     </div>
   );

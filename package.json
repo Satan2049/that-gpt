@@ -1,7 +1,7 @@
 {
-  "name": "chat-nest",
-  "version": "2.0.0",
-  "description": "ChatNest — desktop chat with OpenAI-compatible API proxy and local JSON storage",
+  "name": "that-gpt",
+  "version": "2.2.0",
+  "description": "ThatGPT — local ChatGPT-style desktop chat for OpenAI-compatible APIs and Ollama",
   "license": "MIT",
   "private": false,
   "scripts": {
@@ -14,15 +14,13 @@
     "build:portable": "tauri build --bundles none && node scripts/stage-portable.mjs",
     "dev:client": "npm --prefix client run dev",
     "build:client": "npm --prefix client run build",
+    "generate:brand": "node scripts/generate-brand-assets.mjs",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "ios:init": "tauri ios init",
-    "ios:dev": "tauri ios dev",
-    "ios:build": "tauri ios build",
     "release:package": "powershell -ExecutionPolicy Bypass -File scripts/package-release.ps1",
     "release:hashes": "powershell -ExecutionPolicy Bypass -File scripts/generate-sha256.ps1",
     "release:verify": "powershell -ExecutionPolicy Bypass -File scripts/generate-sha256.ps1 -Package",
     "clean": "powershell -ExecutionPolicy Bypass -File scripts/clean-project.ps1",
-    "clean:all": "powershell -ExecutionPolicy Bypass -File scripts/clean-project.ps1 -All -Release -Android",
+    "clean:all": "powershell -ExecutionPolicy Bypass -File scripts/clean-project.ps1 -All -Release",
     "postinstall": "npm install --prefix client"
   },
   "devDependencies": {

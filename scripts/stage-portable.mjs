@@ -6,8 +6,8 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const releaseDir = path.join(root, "src-tauri", "target", "release");
 const bundleDir = path.join(releaseDir, "bundle");
 const portableDir = path.join(bundleDir, "portable");
-const exeName = "chat-nest.exe";
-const brandedName = "ChatNest.exe";
+const exeName = "that-gpt.exe";
+const brandedName = "ThatGPT.exe";
 
 const src = path.join(releaseDir, exeName);
 if (!fs.existsSync(src)) {

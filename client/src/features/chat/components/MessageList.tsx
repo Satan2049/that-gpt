@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatAttachment, ChatMessage } from "../types/chat.types";
 import { MessageMarkdown } from "./MessageMarkdown";
 import { MessageActions } from "./MessageActions";
@@ -9,6 +9,8 @@ type Props = {
   loading: boolean;
   streamingMessageId?: string | null;
 };
+
+const SCROLL_THRESHOLD_PX = 96;
 
 function collectAttachments(msg: ChatMessage): ChatAttachment[] {
   const fromField = msg.attachments ?? [];
@@ -75,14 +77,33 @@ function AttachmentPreview({ attachments }: { attachments: ChatAttachment[] }) {
 }
 
 export function MessageList({ messages, loading, streamingMessageId }: Props) {
+  const listRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+  const [showJumpChip, setShowJumpChip] = useState(false);
   const toolActivity = useChatStore((s) => s.toolActivity);
   const sending = useChatStore((s) => s.sending);
   const regenerateLastResponse = useChatStore((s) => s.regenerateLastResponse);
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    bottomRef.current?.scrollIntoView({ behavior });
+    stickToBottomRef.current = true;
+    setShowJumpChip(false);
+  }, []);
+
+  const updateStickiness = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD_PX;
+    stickToBottomRef.current = nearBottom;
+    setShowJumpChip(!nearBottom);
+  }, []);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading, streamingMessageId, toolActivity]);
+    if (stickToBottomRef.current) {
+      scrollToBottom(streamingMessageId ? "auto" : "smooth");
+    }
+  }, [messages, loading, streamingMessageId, toolActivity, scrollToBottom]);
 
   const visible = messages.filter(
     (m) => m.role === "user" || m.role === "assistant" || m.role === "tool"
@@ -102,104 +123,117 @@ export function MessageList({ messages, loading, streamingMessageId }: Props) {
 
   if (visible.length === 0) {
     return (
-      <div className="messages-placeholder">
-        Send a message to start this conversation.
+      <div className="messages-empty">
+        <p className="messages-empty-title">Go on, bother a local model.</p>
+        <p className="messages-empty-sub">Ask anything — it runs on your hardware.</p>
       </div>
     );
   }
 
   return (
-    <div className="message-list">
-      {visible.map((msg) => {
-        const isStreaming = streamingMessageId === msg.id;
-        const attachments = collectAttachments(msg);
+    <div className="message-list-shell">
+      <div className="message-list" ref={listRef} onScroll={updateStickiness}>
+        {visible.map((msg) => {
+          const isStreaming = streamingMessageId === msg.id;
+          const attachments = collectAttachments(msg);
 
-        if (msg.role === "tool") {
-          return (
-            <div key={msg.id} className="message message-tool">
-              <div className="message-role">tool · {msg.toolName ?? "result"}</div>
-              <div className="message-content message-tool-content">{msg.content}</div>
-            </div>
-          );
-        }
-
-        if (msg.role === "assistant" && msg.toolCalls?.length) {
-          return (
-            <div key={msg.id} className="message message-assistant message-tool-call">
-              <div className="message-role">assistant · tools</div>
-              {msg.toolCalls.map((tc) => (
-                <div key={tc.id} className="tool-call-block">
-                  <div className="tool-call-name">{tc.name}</div>
-                  <pre className="tool-call-args">{tc.arguments}</pre>
-                </div>
-              ))}
-              {msg.content ? <div className="message-content">{msg.content}</div> : null}
-            </div>
-          );
-        }
-
-        return (
-          <div
-            key={msg.id}
-            className={msg.role === "user" ? "message message-user" : "message message-assistant"}
-          >
-            <div className="message-role">{msg.role}</div>
-            <AttachmentPreview attachments={attachments} />
-            {msg.content ? (
-              <div
-                className={
-                  msg.role === "assistant"
-                    ? "message-content message-content-markdown"
-                    : "message-content"
-                }
-              >
-                {msg.role === "assistant" ? (
-                  <MessageMarkdown content={msg.content} />
-                ) : (
-                  msg.content
-                )}
-                {isStreaming ? (
-                  <span className="streaming-cursor inline-cursor" aria-hidden="true" />
-                ) : null}
+          if (msg.role === "tool") {
+            return (
+              <div key={msg.id} className="message message-tool message-enter">
+                <div className="message-role">tool · {msg.toolName ?? "result"}</div>
+                <div className="message-content message-tool-content">{msg.content}</div>
               </div>
-            ) : isStreaming ? (
-              <div className="message-content streaming-placeholder">
-                <span className="streaming-cursor" aria-hidden="true" />
-              </div>
-            ) : null}
-            {msg.role === "assistant" && msg.content && !msg.toolCalls?.length ? (
-              <MessageActions
-                content={msg.content}
-                canRegenerate={msg.id === lastAssistantId}
-                regenerating={sending && msg.id === lastAssistantId}
-                onRegenerate={() => void regenerateLastResponse()}
-              />
-            ) : null}
-          </div>
-        );
-      })}
+            );
+          }
 
-      {toolActivity.length > 0 ? (
-        <div className="tool-activity-panel">
-          {toolActivity.map((item) => (
+          if (msg.role === "assistant" && msg.toolCalls?.length) {
+            return (
+              <div key={msg.id} className="message message-assistant message-tool-call message-enter">
+                <div className="message-role">assistant · tools</div>
+                {msg.toolCalls.map((tc) => (
+                  <div key={tc.id} className="tool-call-block">
+                    <div className="tool-call-name">{tc.name}</div>
+                    <pre className="tool-call-args">{tc.arguments}</pre>
+                  </div>
+                ))}
+                {msg.content ? <div className="message-content">{msg.content}</div> : null}
+              </div>
+            );
+          }
+
+          return (
             <div
-              key={item.id}
+              key={msg.id}
               className={
-                item.kind === "call"
-                  ? "tool-activity-item tool-activity-call"
-                  : "tool-activity-item tool-activity-result"
+                msg.role === "user"
+                  ? "message message-user message-enter"
+                  : "message message-assistant message-enter"
               }
             >
-              <span className="tool-activity-label">
-                {item.kind === "call" ? "Calling" : "Result"}: {item.name}
-              </span>
-              <pre className="tool-activity-detail">{item.detail}</pre>
+              <div className="message-role">{msg.role}</div>
+              <AttachmentPreview attachments={attachments} />
+              {msg.content ? (
+                <div
+                  className={
+                    msg.role === "assistant"
+                      ? "message-content message-content-markdown"
+                      : "message-content"
+                  }
+                >
+                  {msg.role === "assistant" ? (
+                    <MessageMarkdown content={msg.content} />
+                  ) : (
+                    msg.content
+                  )}
+                  {isStreaming ? (
+                    <span className="streaming-cursor inline-cursor" aria-hidden="true" />
+                  ) : null}
+                </div>
+              ) : isStreaming ? (
+                <div className="message-content streaming-placeholder">
+                  <span className="streaming-cursor" aria-hidden="true" />
+                </div>
+              ) : null}
+              {msg.role === "assistant" && msg.content && !msg.toolCalls?.length ? (
+                <MessageActions
+                  content={msg.content}
+                  canRegenerate={msg.id === lastAssistantId}
+                  regenerating={sending && msg.id === lastAssistantId}
+                  onRegenerate={() => void regenerateLastResponse()}
+                />
+              ) : null}
             </div>
-          ))}
-        </div>
-      ) : null}
+          );
+        })}
 
-      <div ref={bottomRef} />
+        {toolActivity.length > 0 ? (
+          <div className="tool-activity-panel">
+            {toolActivity.map((item) => (
+              <div
+                key={item.id}
+                className={
+                  item.kind === "call"
+                    ? "tool-activity-item tool-activity-call"
+                    : "tool-activity-item tool-activity-result"
+                }
+              >
+                <span className="tool-activity-label">
+                  {item.kind === "call" ? "Calling" : "Result"}: {item.name}
+                </span>
+                <pre className="tool-activity-detail">{item.detail}</pre>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {showJumpChip ? (
+        <button type="button" className="scroll-latest-chip" onClick={() => scrollToBottom("smooth")}>
+          ↓ New messages
+        </button>
+      ) : null}
     </div>
   );
 }

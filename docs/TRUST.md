@@ -1,6 +1,6 @@
 # Trust and verification
 
-ChatNest is open source. You can build it yourself, or download pre-built binaries from [GitHub Releases](https://github.com/Satan2049/chat-nest/releases). This document explains how to verify that a downloaded file matches the published checksums and how to scan binaries with VirusTotal.
+ThatGPT is open source. You can build it yourself, or download pre-built **Windows** binaries from [GitHub Releases](https://github.com/Satan2049/that-gpt/releases). This document explains how to verify checksums and where to publish VirusTotal scan links.
 
 ## SHA256 checksums
 
@@ -9,7 +9,7 @@ Each release publishes a `SHA256.txt` file listing cryptographic hashes for:
 - Portable `.exe` files
 - NSIS setup `.exe` installers
 - `.zip` release archives
-- Optional branding assets (`assets/logo.png`, `assets/banner.png`)
+- Optional branding assets (`assets/logo-square.png`, `assets/banner.png`)
 
 ### Generate checksums (maintainers)
 
@@ -31,33 +31,15 @@ Commit or attach `SHA256.txt` to the GitHub Release alongside the binaries.
 
 ### Verify on Windows (PowerShell)
 
-1. Download the release file (for example `ChatNest-1.1.0-windows-x64-portable.exe`).
+1. Download the release file (for example `ThatGPT-2.2.0-windows-x64-portable.exe`).
 2. Download `SHA256.txt` from the same release.
-3. Compute the hash of your file:
+3. Compute the hash:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 .\ChatNest-1.1.0-windows-x64-portable.exe
+Get-FileHash -Algorithm SHA256 .\ThatGPT-2.2.0-windows-x64-portable.exe
 ```
 
 4. Compare the `Hash` value with the matching line in `SHA256.txt` (case-insensitive).
-
-Example `SHA256.txt` line:
-
-```text
-a1b2c3d4...  release/ChatNest-1.1.0-windows-x64-portable.exe
-```
-
-The hash before the spaces must match exactly.
-
-### Verify on macOS / Linux
-
-```bash
-shasum -a 256 ChatNest-1.0.0-windows-x64-portable.exe
-# or
-sha256sum ChatNest-1.0.0-windows-x64-portable.exe
-```
-
-Compare the output with `SHA256.txt`.
 
 ## VirusTotal scanning
 
@@ -66,83 +48,68 @@ Independent antivirus engines may flag **new or uncommon** executables — espec
 ### Scan a release binary
 
 1. Open [VirusTotal](https://www.virustotal.com/).
-2. Choose **Upload** and select the `.exe` or `.zip` from the release.
-3. Wait for the scan to finish and review the detection ratio and engine details.
+2. Upload the release `.exe` (portable and NSIS installer separately).
+3. Copy each report URL from the browser address bar (`https://www.virustotal.com/gui/file/<sha256>?...`).
 
-### Maintainer workflow
+### Where to put VirusTotal links (maintainers)
 
-After publishing a release, upload these files to VirusTotal:
+After each release build, update **all three**:
 
-| File | Purpose |
-|------|---------|
-| `ChatNest-*-portable.exe` | Standalone portable binary |
-| `ChatNest_*_x64-setup.exe` | NSIS installer |
+| Location | What to add |
+|----------|-------------|
+| **`docs/TRUST.md`** | § **Published reports (vX.Y.Z)** table — canonical, long-lived |
+| **GitHub Release body** | Markdown block with both VT URLs (see below) |
+| **`docs/RELEASE_vX.Y.Z.md`** | Same table as TRUST.md for that version |
 
-Add the VirusTotal report links to the GitHub Release notes so users can review them without re-uploading.
+### Published reports (v2.2.0)
 
-### Published reports (v2.0.0)
-
-| File | SHA256 | VirusTotal | Notes |
-|------|--------|------------|-------|
-| NSIS setup EXE | `b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f` | [View report](https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1) | SecureAge — `Malicious` (heuristic) |
-| Portable EXE | `752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74` | [View report](https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1) | Trapmine — `Malicious.moderate.ml.score` (heuristic) |
-
-Copy this block into GitHub Release notes:
+| File | VirusTotal |
+|------|------------|
+| NSIS setup EXE | [View report](https://www.virustotal.com/gui/file/f63d133370d374f7253872385f31f7f6bd117836b83e543dde89f15132b5f1a0?nocache=1) |
+| Portable EXE | [View report](https://www.virustotal.com/gui/file/dc214aa871c8fb4b2922b2ae9bafb92ce740950b524700c2b672023644d1765f?nocache=1) |
 
 ```markdown
-## VirusTotal reports (v2.0.0)
-- NSIS installer: https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1
-- Portable EXE: https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1
+## VirusTotal reports (v2.2.0)
+- NSIS installer: https://www.virustotal.com/gui/file/f63d133370d374f7253872385f31f7f6bd117836b83e543dde89f15132b5f1a0?nocache=1
+- Portable EXE: https://www.virustotal.com/gui/file/dc214aa871c8fb4b2922b2ae9bafb92ce740950b524700c2b672023644d1765f?nocache=1
+
+Verify checksums: https://github.com/Satan2049/that-gpt/blob/main/SHA256.txt
 ```
 
-**Note:** As of the published scan, **2 heuristic engines** (SecureAge, Trapmine) flagged these unsigned v2.0.0 builds. The majority of engines reported clean. See [Interpreting results](#interpreting-results) below.
+### Published reports (v2.0.0 — ChatNest)
 
-### Published reports (v1.1.0)
+Historical scans from the prior product name. Hashes refer to ChatNest v2.0.0 builds.
 
 | File | SHA256 | VirusTotal |
 |------|--------|------------|
-| Portable EXE | `a67da016dc47add860ed38c57de5461abcd4365aa59e597718208a0876876b8b` | [View report](https://www.virustotal.com/gui/file/a67da016dc47add860ed38c57de5461abcd4365aa59e597718208a0876876b8b) |
-| NSIS setup EXE | `a92cb98a81771f10cd127bc4adb56e22a502394f46c1600b6b2eb44fd9e8e696` | [View report](https://www.virustotal.com/gui/file/a92cb98a81771f10cd127bc4adb56e22a502394f46c1600b6b2eb44fd9e8e696) |
-
-Copy this block into GitHub Release notes:
-
-```markdown
-## VirusTotal reports (v1.1.0)
-- Portable EXE: https://www.virustotal.com/gui/file/a67da016dc47add860ed38c57de5461abcd4365aa59e597718208a0876876b8b
-- NSIS installer: https://www.virustotal.com/gui/file/a92cb98a81771f10cd127bc4adb56e22a502394f46c1600b6b2eb44fd9e8e696
-```
-
-**Note:** As of the published scan, **2 engines** (SecureAge, Trapmine) flagged these builds. The majority of engines reported clean. See [Interpreting results](#interpreting-results) below.
+| NSIS setup EXE | `b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f` | [View report](https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1) |
+| Portable EXE | `752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74` | [View report](https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1) |
 
 ### Interpreting results
 
 - **0 detections** — Common for established signed apps; new unsigned builds may still be clean.
-- **1–3 detections on heuristic / reputation engines** — Often false positives on new, unsigned, or Rust/Tauri binaries. **SecureAge** and **Trapmine** frequently flag unknown executables until they build reputation. Compare with SHA256 verification and a local source build.
-- **Many detections across major vendors** (Microsoft, Google, Kaspersky, etc.) — Do not run the file. [Open a security issue](../SECURITY.md) or discussion on the repository.
+- **1–3 detections on heuristic engines** — Often false positives on new, unsigned Rust/Tauri binaries.
+- **Many detections across major vendors** — Do not run the file. See [SECURITY.md](../SECURITY.md).
 
 ## Build from source (highest trust)
 
-If you do not trust pre-built binaries, build locally:
-
 ```bash
-git clone https://github.com/Satan2049/chat-nest.git
-cd chat-nest
+git clone https://github.com/Satan2049/that-gpt.git
+cd that-gpt
 npm install
 npm run build
 ```
 
-Your binary will be at:
+Portable binary:
 
 ```text
-src-tauri/target/release/bundle/portable/ChatNest.exe
+src-tauri/target/release/bundle/portable/ThatGPT.exe
 ```
-
-Compare its SHA256 to your own build output, not to a downloaded file.
 
 ## Code signing (future)
 
-Windows SmartScreen warnings are reduced when binaries are signed with a trusted code-signing certificate. Code signing is planned for future releases; until then, use SHA256 verification and VirusTotal reports above.
+Code signing is planned for future releases; until then, use SHA256 verification and VirusTotal reports above.
 
 ## Questions
 
-For security concerns, see [SECURITY.md](../SECURITY.md). For general questions, open a [GitHub Discussion](https://github.com/Satan2049/chat-nest/discussions).
+See [SECURITY.md](../SECURITY.md) and [GitHub Discussions](https://github.com/Satan2049/that-gpt/discussions).

@@ -11,7 +11,7 @@ pub struct HealthResponse {
 pub fn health_check() -> HealthResponse {
     HealthResponse {
         status: "ok".to_string(),
-        service: "chatnest".to_string(),
+        service: "thatgpt".to_string(),
     }
 }
 

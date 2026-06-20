@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Remove build artifacts, caches, and other junk from the ChatNest workspace.
+  Remove build artifacts, caches, and other junk from the ThatGPT workspace.
 
 .DESCRIPTION
   Safe by default: deletes compile outputs and temp files, not dependencies.
@@ -16,8 +16,7 @@
 #>
 param(
     [switch]$All,
-    [switch]$Release,
-    [switch]$Android
+    [switch]$Release
 )
 
 Set-StrictMode -Version Latest
@@ -43,7 +42,7 @@ function Remove-Glob {
     }
 }
 
-Write-Host "ChatNest workspace cleanup ($Root)"
+Write-Host "ThatGPT workspace cleanup ($Root)"
 
 # Rust / Tauri
 Remove-IfExists (Join-Path $Root "src-tauri\target") "Rust target (src-tauri/target)"
@@ -54,11 +53,6 @@ Remove-IfExists (Join-Path $Root "client\dist") "Vite dist (client/dist)"
 # Staged release folder (optional)
 if ($Release) {
     Remove-IfExists (Join-Path $Root "release") "release/"
-}
-
-# Abandoned / generated Android tree (optional)
-if ($Android) {
-    Remove-IfExists (Join-Path $Root "src-tauri\gen\android") "Tauri Android project (src-tauri/gen/android)"
 }
 
 # Vite / tooling caches (outside node_modules root)

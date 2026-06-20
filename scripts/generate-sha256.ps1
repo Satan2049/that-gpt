@@ -65,8 +65,8 @@ Add-IfExists $ReleaseDir
 # Fallback: raw Tauri bundle outputs
 if ($candidates.Count -eq 0) {
   Write-Warning "release/ is empty. Hashing Tauri bundle artifacts directly."
-  Add-IfExists (Join-Path $BundlePortable "ChatNest.exe")
-  Add-IfExists (Join-Path $BundlePortable "chat-nest.exe")
+  Add-IfExists (Join-Path $BundlePortable "ThatGPT.exe")
+  Add-IfExists (Join-Path $BundlePortable "that-gpt.exe")
   if (Test-Path $BundleNsis) {
     Get-ChildItem $BundleNsis -Filter "*.exe" | ForEach-Object { $candidates.Add($_.FullName) }
   }
@@ -82,7 +82,7 @@ if ($files.Count -eq 0) {
 }
 
 $lines = [System.Collections.Generic.List[string]]::new()
-$lines.Add("# ChatNest SHA256 checksums")
+$lines.Add("# ThatGPT SHA256 checksums")
 $lines.Add("# Product: $Product")
 $lines.Add("# Version: $Version")
 $lines.Add("# Generated: $GeneratedAt")

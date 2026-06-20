@@ -1,11 +1,15 @@
-# ChatNest SHA256 checksums
-# Product: ChatNest
-# Version: 2.0.0
-# Generated: 2026-06-17 (release binaries — verify with Get-FileHash after download)
+﻿# ThatGPT SHA256 checksums
+# Product: ThatGPT
+# Version: 2.2.0
+# Generated: 2026-06-20 22:00:50 UTC
 #
 # Verify on Windows (PowerShell):
 #   Get-FileHash -Algorithm SHA256 <file>
 # See docs/TRUST.md for full instructions.
 
-b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f  ChatNest_2.0.0_x64-setup.exe
-752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74  ChatNest-2.0.0-windows-x64-portable.exe
+4503ba7282e0310209b089f7f2748cdff1484073da5cfe42d797fc226521754e  assets/banner.png
+fb738973d626d5f2260c7b250953a897cb71e9f9db2a98fa326eed967655751e  assets/logo.png
+e819934172c2dd0a47618eb46c0ea59df53d1c8749c2f2a0f7c41e47ebdca6bc  release/ChatNest_0.1.0_x64-setup.exe
+96feacaf6ab8d2b782d7ae2e2103b854e3d2cb0c84fca2410048915e7fe697bd  release/ChatNest-0.1.0-windows-x64-portable.exe
+eb5a75c5e4b6c3871256737639a478877f0d41a6dbfda729a32973d765e11805  release/ChatNest-0.1.0-windows-x64-portable.zip
+85d354818e206fa9f55710d050b0587e53210b2382880017f0ccbf6ea61c1167  release/ChatNest-0.1.0-windows-x64-setup.zip

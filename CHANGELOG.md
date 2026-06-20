@@ -1,9 +1,38 @@
 # Changelog
 
-All notable changes to ChatNest are documented in this file.
+All notable changes to ThatGPT are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.2.0] - 2026-06-20
+
+Release notes: [docs/RELEASE_v2.2.0.md](docs/RELEASE_v2.2.0.md)
+
+**Windows desktop only.** Linux and macOS planned later.
+
+### Added
+
+- **ThatGPT rebrand** — Chat bubble + T logo, `com.thatgpt.desktop`, ChatGPT-inspired shell
+- **True SSE streaming** — Live token streaming from OpenAI-compatible APIs
+- **Smart scroll lock** — Stick-to-bottom only when near bottom; “↓ New messages” chip
+- **LaTeX & Mermaid** — KaTeX math and Mermaid diagram rendering in assistant messages
+- **Input polish** — Drag-and-drop attachments, paste images, per-conversation draft persistence
+- **Toasts** — Copy feedback for messages and code blocks
+- **Personality presets** — Parody tone chips in Settings → Personalization
+- **Keyboard shortcuts** — Ctrl+K search, Ctrl+Shift+O new chat
+- **Legacy data migration** — Copies `%APPDATA%\com.chatnest.desktop\` on first launch
+- **Sidebar expand** — Header button restores collapsed sidebar; state persisted in localStorage
+
+### Changed
+
+- Default theme is dark; settings reorganized into tabbed modal
+- Prompt presets moved to Settings → Personalization
+- Config path: `%APPDATA%\com.thatgpt.desktop\.env`
+
+### Removed
+
+- Mobile shell, Android/iOS targets, Codemagic CI, `MobileShell` component
 
 ## [2.0.0] - 2026-06-17
 
@@ -15,7 +44,7 @@ Release notes: [docs/RELEASE_v2.0.0.md](docs/RELEASE_v2.0.0.md)
 
 - **Design system** — Expanded tokens (spacing, radius, shadows, semantic colors) and Inter font loading
 - **Branding** — In-app logo mark, refreshed desktop shell, and updated app icons
-- **Responsive layout** — Slide-over drawer with bottom tabs on narrow viewports; full sidebar on desktop
+- **Responsive layout** — Slide-over drawer on narrow viewports; full sidebar on desktop
 - **Markdown rendering** — Assistant messages render GFM markdown with syntax-highlighted code blocks
 - **Stop generation** — Cancel in-flight streaming from the composer
 - **Tool calling** — Agent loop with image, audio, and attachment analysis tools
@@ -44,56 +73,17 @@ Release notes: [docs/RELEASE_v2.0.0.md](docs/RELEASE_v2.0.0.md)
 
 ### Removed
 
-- **Android mobile build** — Tauri Android target and `src-tauri/gen/android/` removed from the repo; ChatNest v2 ships as **Windows desktop** only
+- **Android mobile build** — Tauri Android target removed; Windows desktop only
 
 ## [1.1.0] - 2026-06-10
 
-Feature release focused on daily-use polish.
+See [GitHub Releases](https://github.com/Satan2049/that-gpt/releases).
 
-### Added
+## [1.0.0] - 2026-06-03
 
-- **Streaming responses** — Assistant messages render token-by-token with a live cursor
-- **Settings: Test connection** — Validates API key and base URL against the provider
-- **Settings: Model picker** — Refresh models from `/v1/models` with autocomplete
-- **Conversation export** — Download active thread as Markdown (`.md`) or JSON (`.json`)
-- **In-app settings (1.0 follow-up)** — All `.env` options editable from the Settings panel
+First stable release.
 
-### Changed
-
-- Non-streaming providers fall back automatically when streaming is unsupported
-- Error messages point users to Settings instead of manual `.env` editing
-
-## [1.0.0] - 2026-06-10
-
-First stable release of ChatNest as a local-first desktop application.
-
-### Added
-
-- **Desktop app (Tauri 2 + Rust)** — Native Windows shell with React UI
-- **Local chat** — Persistent conversations stored as JSON in the app data directory
-- **Prompt presets** — Reusable system prompts with model, temperature, and token limits
-- **Vision support** — JPEG, PNG, and WebP image attachments with server-side validation
-- **OpenAI-compatible API proxy** — API key stays in the Rust backend, not the webview
-- **Themes** — Light and dark UI with persisted preference
-- **Release verification** — `SHA256.txt`, `scripts/generate-sha256.ps1`, and [docs/TRUST.md](docs/TRUST.md)
-- **Project docs** — README, CONTRIBUTING, SECURITY, and release packaging scripts
-
-### Changed
-
-- Migrated from the original Node.js/Fastify + React web stack to Rust + Tauri
-- Rebranded from Chatterbox to **ChatNest** (`com.chatnest.desktop`)
-
-### Technical
-
-- Frontend communicates via Tauri `invoke` (no HTTP backend)
-- Config: `%APPDATA%\com.chatnest.desktop\.env`
-- Data: `%APPDATA%\com.chatnest.desktop\data\`
-
-## [0.1.0] - Pre-release
-
-Initial Tauri migration and internal testing builds. Superseded by **1.0.0**.
-
-[2.0.0]: https://github.com/Satan2049/chat-nest/releases/tag/v2.0.0
-[1.1.0]: https://github.com/Satan2049/chat-nest/releases/tag/v1.1.0
-[1.0.0]: https://github.com/Satan2049/chat-nest/releases/tag/v1.0.0
-[0.1.0]: https://github.com/Satan2049/chat-nest/releases/tag/v0.1.0
+[2.2.0]: https://github.com/Satan2049/that-gpt/releases/tag/v2.2.0
+[2.0.0]: https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0
+[1.1.0]: https://github.com/Satan2049/that-gpt/releases/tag/v1.1.0
+[1.0.0]: https://github.com/Satan2049/that-gpt/releases/tag/v1.0.0

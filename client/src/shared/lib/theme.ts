@@ -1,10 +1,12 @@
 export type Theme = "light" | "dark";
 
-export const THEME_KEY = "chatnest-theme";
+export const THEME_KEY = "thatgpt-theme";
+const LEGACY_THEME_KEY = "chatnest-theme";
 
 export function readStoredTheme(): Theme {
-  const saved = localStorage.getItem(THEME_KEY);
-  return saved === "dark" ? "dark" : "light";
+  const saved = localStorage.getItem(THEME_KEY) ?? localStorage.getItem(LEGACY_THEME_KEY);
+  if (saved === "light") return "light";
+  return "dark";
 }
 
 export function applyTheme(theme: Theme): void {
