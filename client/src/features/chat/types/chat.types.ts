@@ -32,6 +32,9 @@ export type ChatMessage = {
   toolCalls?: ToolCallRecord[];
   toolCallId?: string;
   toolName?: string;
+  bookmarked?: boolean;
+  parentId?: string;
+  branchId?: string;
 };
 
 export type Conversation = {
@@ -41,13 +44,30 @@ export type Conversation = {
   promptPresetId?: string;
   createdAt: string;
   updatedAt: string;
+  pinned?: boolean;
+  archived?: boolean;
+  folderId?: string;
+  tags?: string[];
+  ephemeral?: boolean;
+  lastModel?: string;
+  temperatureOverride?: number;
+  maxTokensOverride?: number;
+  systemPromptOverride?: string;
+  branchPicks?: Record<string, string>;
 };
 
 export type ConversationSummary = {
   id: string;
   title: string;
   updatedAt: string;
+  pinned?: boolean;
+  archived?: boolean;
+  folderId?: string;
+  tags?: string[];
+  ephemeral?: boolean;
 };
+
+export type ConversationListView = "active" | "archived" | "all";
 
 export type PendingAttachmentPayload = {
   mimeType: string;

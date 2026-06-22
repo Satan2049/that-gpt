@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
@@ -6,6 +7,7 @@ use reqwest::Client;
 
 use crate::error::AppError;
 use crate::models::settings::UpdateSettingsBody;
+use crate::models::Conversation;
 
 const DEFAULT_BASE_URL: &str = "https://api.openai.com/v1";
 const DEFAULT_MODEL: &str = "gpt-4o-mini";
@@ -23,6 +25,14 @@ pub struct AppConfig {
     pub ai_default_system_prompt: String,
     pub ai_request_timeout_ms: u64,
     pub ai_max_retries: u32,
+    pub ai_context_message_limit: u32,
+    pub pdf_preview_char_limit: u32,
+    pub knowledge_base_enabled: bool,
+    pub knowledge_base_path: String,
+    pub knowledge_use_embeddings: bool,
+    pub knowledge_embedding_model: String,
+    pub web_search_enabled: bool,
+    pub dev_mode_enabled: bool,
 }
 
 impl AppConfig {
@@ -49,6 +59,33 @@ impl AppConfig {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(DEFAULT_MAX_RETRIES),
+            ai_context_message_limit: std::env::var("AI_CONTEXT_MESSAGE_LIMIT")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0),
+            pdf_preview_char_limit: std::env::var("PDF_PREVIEW_CHAR_LIMIT")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(4000),
+            knowledge_base_enabled: std::env::var("KNOWLEDGE_BASE_ENABLED")
+                .ok()
+                .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+                .unwrap_or(false),
+            knowledge_base_path: std::env::var("KNOWLEDGE_BASE_PATH").unwrap_or_default(),
+            knowledge_use_embeddings: std::env::var("KNOWLEDGE_USE_EMBEDDINGS")
+                .ok()
+                .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+                .unwrap_or(false),
+            knowledge_embedding_model: std::env::var("KNOWLEDGE_EMBEDDING_MODEL")
+                .unwrap_or_else(|_| "nomic-embed-text".to_string()),
+            web_search_enabled: std::env::var("WEB_SEARCH_ENABLED")
+                .ok()
+                .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+                .unwrap_or(true),
+            dev_mode_enabled: std::env::var("DEV_MODE_ENABLED")
+                .ok()
+                .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+                .unwrap_or(false),
         }
     }
 
@@ -75,6 +112,16 @@ impl AppConfig {
         if body.ai_max_retries > 10 {
             return Err(AppError::bad_request("Max retries must be at most 10"));
         }
+        if body.ai_context_message_limit > 500 {
+            return Err(AppError::bad_request(
+                "Context message limit must be at most 500",
+            ));
+        }
+        if body.pdf_preview_char_limit < 500 || body.pdf_preview_char_limit > 100_000 {
+            return Err(AppError::bad_request(
+                "PDF preview limit must be between 500 and 100000 characters",
+            ));
+        }
 
         Ok(Self {
             ai_api_key: body.ai_api_key.trim().to_string(),
@@ -85,6 +132,14 @@ impl AppConfig {
             ai_default_system_prompt: body.ai_default_system_prompt,
             ai_request_timeout_ms: body.ai_request_timeout_ms,
             ai_max_retries: body.ai_max_retries,
+            ai_context_message_limit: body.ai_context_message_limit,
+            pdf_preview_char_limit: body.pdf_preview_char_limit,
+            knowledge_base_enabled: body.knowledge_base_enabled,
+            knowledge_base_path: body.knowledge_base_path.trim().to_string(),
+            knowledge_use_embeddings: body.knowledge_use_embeddings,
+            knowledge_embedding_model: body.knowledge_embedding_model.trim().to_string(),
+            web_search_enabled: body.web_search_enabled,
+            dev_mode_enabled: body.dev_mode_enabled,
         })
     }
 
@@ -103,7 +158,15 @@ impl AppConfig {
              AI_AUDIO_MODEL={}\n\
              AI_DEFAULT_SYSTEM_PROMPT={}\n\
              AI_REQUEST_TIMEOUT_MS={}\n\
-             AI_MAX_RETRIES={}\n",
+             AI_MAX_RETRIES={}\n\
+             AI_CONTEXT_MESSAGE_LIMIT={}\n\
+             PDF_PREVIEW_CHAR_LIMIT={}\n\
+             KNOWLEDGE_BASE_ENABLED={}\n\
+             KNOWLEDGE_BASE_PATH={}\n\
+             KNOWLEDGE_USE_EMBEDDINGS={}\n\
+             KNOWLEDGE_EMBEDDING_MODEL={}\n\
+             WEB_SEARCH_ENABLED={}\n\
+             DEV_MODE_ENABLED={}\n",
             escape_env_value(&self.ai_api_key),
             escape_env_value(&self.ai_base_url),
             escape_env_value(&self.ai_model),
@@ -112,6 +175,14 @@ impl AppConfig {
             escape_env_value(&self.ai_default_system_prompt),
             self.ai_request_timeout_ms,
             self.ai_max_retries,
+            self.ai_context_message_limit,
+            self.pdf_preview_char_limit,
+            if self.knowledge_base_enabled { "true" } else { "false" },
+            escape_env_value(&self.knowledge_base_path),
+            if self.knowledge_use_embeddings { "true" } else { "false" },
+            escape_env_value(&self.knowledge_embedding_model),
+            if self.web_search_enabled { "true" } else { "false" },
+            if self.dev_mode_enabled { "true" } else { "false" },
         );
 
         std::fs::write(&env_path, contents).map_err(|e| {
@@ -159,6 +230,7 @@ pub struct AppState {
     config: std::sync::Arc<RwLock<AppConfig>>,
     http: std::sync::Arc<RwLock<Client>>,
     active_generation: Arc<Mutex<Option<ActiveGeneration>>>,
+    ephemeral_conversations: Arc<Mutex<HashMap<String, Conversation>>>,
 }
 
 impl AppState {
@@ -221,6 +293,38 @@ impl AppState {
         }
     }
 
+    pub fn store_ephemeral(&self, conversation: Conversation) {
+        let mut guard = self
+            .ephemeral_conversations
+            .lock()
+            .expect("ephemeral conversations lock poisoned");
+        guard.insert(conversation.id.clone(), conversation);
+    }
+
+    pub fn get_ephemeral(&self, id: &str) -> Option<Conversation> {
+        let guard = self
+            .ephemeral_conversations
+            .lock()
+            .expect("ephemeral conversations lock poisoned");
+        guard.get(id).cloned()
+    }
+
+    pub fn remove_ephemeral(&self, id: &str) -> bool {
+        let mut guard = self
+            .ephemeral_conversations
+            .lock()
+            .expect("ephemeral conversations lock poisoned");
+        guard.remove(id).is_some()
+    }
+
+    pub fn list_ephemeral_summaries(&self) -> Vec<Conversation> {
+        let guard = self
+            .ephemeral_conversations
+            .lock()
+            .expect("ephemeral conversations lock poisoned");
+        guard.values().cloned().collect()
+    }
+
     pub fn update_settings(&self, body: UpdateSettingsBody) -> Result<AppConfig, AppError> {
         let new_config = AppConfig::from_update(body)?;
         new_config.save_to_env(&self.config_dir)?;
@@ -255,13 +359,21 @@ mod tests {
             ai_default_system_prompt: String::new(),
             ai_request_timeout_ms: 60_000,
             ai_max_retries: 2,
+            ai_context_message_limit: 0,
+            pdf_preview_char_limit: 4000,
+            knowledge_base_enabled: false,
+            knowledge_base_path: String::new(),
+            knowledge_use_embeddings: false,
+            knowledge_embedding_model: "nomic-embed-text".to_string(),
+            web_search_enabled: true,
+            dev_mode_enabled: false,
         };
         assert!(AppConfig::from_update(body).is_err());
     }
 
     #[test]
     fn saves_and_escapes_multiline_prompt() {
-        let dir = std::env::temp_dir().join(format!("chatnest-config-test-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("thatgpt-config-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
 
         let config = AppConfig {
@@ -273,6 +385,14 @@ mod tests {
             ai_default_system_prompt: "Line one\nLine two".to_string(),
             ai_request_timeout_ms: 30_000,
             ai_max_retries: 1,
+            ai_context_message_limit: 0,
+            pdf_preview_char_limit: 4000,
+            knowledge_base_enabled: false,
+            knowledge_base_path: String::new(),
+            knowledge_use_embeddings: false,
+            knowledge_embedding_model: "nomic-embed-text".to_string(),
+            web_search_enabled: true,
+            dev_mode_enabled: false,
         };
 
         config.save_to_env(&dir).unwrap();
@@ -298,5 +418,6 @@ pub fn init_state(app_data_dir: PathBuf) -> AppState {
         config: std::sync::Arc::new(RwLock::new(config)),
         http: std::sync::Arc::new(RwLock::new(http)),
         active_generation: Arc::new(Mutex::new(None)),
+        ephemeral_conversations: Arc::new(Mutex::new(HashMap::new())),
     }
 }

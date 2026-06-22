@@ -1,6 +1,6 @@
 [package]
-name = "chat-nest"
-version = "2.2.0"
+name = "that-gpt"
+version = "2.5.0"
 description = "ThatGPT desktop chat application"
 authors = ["ThatGPT"]
 edition = "2021"
@@ -8,7 +8,7 @@ homepage = "https://github.com/Satan2049/that-gpt"
 license = "MIT"
 
 [lib]
-name = "chat_nest_lib"
+name = "that_gpt_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
@@ -27,6 +27,7 @@ thiserror = "2"
 dotenvy = "0.15"
 base64 = "0.22"
 pdf-extract = "0.7"
+zip = { version = "2", default-features = false, features = ["deflate"] }
 
 [profile.release]
 panic = "abort"

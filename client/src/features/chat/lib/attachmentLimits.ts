@@ -23,6 +23,10 @@ export const ALLOWED_AUDIO_MIMES = [
 
 export const ALLOWED_PDF_MIMES = ["application/pdf"] as const;
 
+export const ALLOWED_DOCX_MIMES = [
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+] as const;
+
 export const ALLOWED_TEXT_MIMES = [
   "text/plain",
   "text/markdown",
@@ -37,7 +41,8 @@ export const ALLOWED_ATTACHMENT_MIMES = [
   ...ALLOWED_IMAGE_MIMES,
   ...ALLOWED_AUDIO_MIMES,
   ...ALLOWED_TEXT_MIMES,
-  ...ALLOWED_PDF_MIMES
+  ...ALLOWED_PDF_MIMES,
+  ...ALLOWED_DOCX_MIMES
 ] as const;
 
 export type AllowedImageMime = (typeof ALLOWED_IMAGE_MIMES)[number];
@@ -60,6 +65,7 @@ export function attachmentKindFromMime(
   if (isAllowedImageMime(mime) || mime === "image/gif") return "image";
   if ((ALLOWED_AUDIO_MIMES as readonly string[]).includes(mime)) return "audio";
   if ((ALLOWED_PDF_MIMES as readonly string[]).includes(mime)) return "pdf";
+  if ((ALLOWED_DOCX_MIMES as readonly string[]).includes(mime)) return "text";
   if ((ALLOWED_TEXT_MIMES as readonly string[]).includes(mime) || mime.startsWith("text/")) {
     return "text";
   }
@@ -77,6 +83,8 @@ export const FILE_INPUT_ACCEPT = [
   ...ALLOWED_AUDIO_MIMES,
   ...ALLOWED_TEXT_MIMES,
   ...ALLOWED_PDF_MIMES,
+  ...ALLOWED_DOCX_MIMES,
   "text/*",
-  ".pdf"
+  ".pdf",
+  ".docx"
 ].join(",");

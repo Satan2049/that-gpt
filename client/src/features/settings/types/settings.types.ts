@@ -7,6 +7,14 @@ export type AppSettings = {
   aiDefaultSystemPrompt: string;
   aiRequestTimeoutMs: number;
   aiMaxRetries: number;
+  aiContextMessageLimit: number;
+  pdfPreviewCharLimit: number;
+  knowledgeBaseEnabled: boolean;
+  knowledgeBasePath: string;
+  knowledgeUseEmbeddings: boolean;
+  knowledgeEmbeddingModel: string;
+  webSearchEnabled: boolean;
+  devModeEnabled: boolean;
   configDir: string;
   maxImagesPerMessage: number;
   maxImageBytes: number;
@@ -21,4 +29,12 @@ export type UpdateSettingsInput = {
   aiDefaultSystemPrompt: string;
   aiRequestTimeoutMs: number;
   aiMaxRetries: number;
+  aiContextMessageLimit: number;
+  pdfPreviewCharLimit: number;
+  knowledgeBaseEnabled: boolean;
+  knowledgeBasePath: string;
+  knowledgeUseEmbeddings: boolean;
+  knowledgeEmbeddingModel: string;
+  webSearchEnabled: boolean;
+  devModeEnabled: boolean;
 };

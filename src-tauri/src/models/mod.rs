@@ -1,11 +1,19 @@
 pub mod ai;
 pub mod api;
 pub mod chat;
+pub mod folder;
+pub mod knowledge;
+pub mod library;
 pub mod prompt;
+pub mod provider;
 pub mod settings;
 
 pub use ai::ChatCompletionMessage;
 pub use api::*;
 pub use chat::*;
+pub use folder::*;
+pub use knowledge::*;
+pub use library::*;
 pub use prompt::*;
+pub use provider::*;
 pub use settings::*;

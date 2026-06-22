@@ -1,13 +1,13 @@
-# Repository Intelligence — ChatNest
+# Repository Intelligence — ThatGPT
 
-> Pre-migration architectural analysis for conversion to a **Rust + Tauri** desktop application.  
-> Generated from full repository scan. No source code was modified.
+> Historical pre-migration architectural analysis (original Node/Fastify prototype).  
+> **ThatGPT** now ships as Tauri 2 + Rust + React. This document is kept for reference.
 
 ---
 
 ## 1. Executive Summary
 
-**ChatNest** is a local-first chat client with an OpenAI-compatible API proxy. The current architecture is a **two-process web app**: a React SPA (Vite dev server) talks to a Fastify HTTP backend that persists JSON files and forwards AI requests.
+**ThatGPT** (Tauri desktop app) is a local-first chat client with an OpenAI-compatible API proxy. The **legacy** architecture described below was a **two-process web app**: a React SPA (Vite dev server) talked to a Fastify HTTP backend that persisted JSON files and forwarded AI requests.
 
 | Metric | Value |
 |--------|-------|
@@ -319,7 +319,7 @@ Fastify registers routes, parses JSON bodies (up to 32 MB), validates with Zod, 
 
 | Method | Path | Handler | Request | Success Response | Error Codes |
 |--------|------|---------|---------|------------------|-------------|
-| `GET` | `/health` | `app.ts` | — | `{ status: "ok", service: "chatnest-server" }` | — |
+| `GET` | `/health` | `app.ts` | — | `{ status: "ok", service: "thatgpt-server" }` | — |
 
 ### 5.2 Chat
 

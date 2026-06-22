@@ -1,5 +1,6 @@
 import { invoke } from "../../../shared/lib/tauriInvoke";
 import type { AppSettings, UpdateSettingsInput } from "../types/settings.types";
+import type { ModelsListResult } from "../types/models.types";
 
 export type ConnectionTestResult = {
   ok: boolean;
@@ -7,10 +8,7 @@ export type ConnectionTestResult = {
   modelCount?: number;
 };
 
-export type ModelsListResult = {
-  models: string[];
-  source: string;
-};
+export type { ModelInfo, ModelsListResult, TokenUsage } from "../types/models.types";
 
 export async function apiGetSettings(): Promise<AppSettings> {
   return invoke<AppSettings>("get_settings");

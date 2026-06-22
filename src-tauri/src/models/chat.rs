@@ -97,6 +97,12 @@ pub struct ChatMessage {
     pub tool_call_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_name: Option<String>,
+    #[serde(default)]
+    pub bookmarked: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub branch_id: String,
 }
 
 impl ChatMessage {
@@ -137,6 +143,26 @@ pub struct Conversation {
     pub prompt_preset_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    #[serde(default)]
+    pub pinned: bool,
+    #[serde(default)]
+    pub archived: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub folder_id: Option<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub ephemeral: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub temperature_override: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens_override: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub system_prompt_override: Option<String>,
+    #[serde(default, skip_serializing_if = "std::collections::HashMap::is_empty")]
+    pub branch_picks: std::collections::HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -145,12 +171,48 @@ pub struct ConversationSummary {
     pub id: String,
     pub title: String,
     pub updated_at: String,
+    #[serde(default)]
+    pub pinned: bool,
+    #[serde(default)]
+    pub archived: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub folder_id: Option<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub ephemeral: bool,
+}
+
+impl Conversation {
+    pub fn to_summary(&self) -> ConversationSummary {
+        ConversationSummary {
+            id: self.id.clone(),
+            title: self.title.clone(),
+            updated_at: self.updated_at.clone(),
+            pinned: self.pinned,
+            archived: self.archived,
+            folder_id: self.folder_id.clone(),
+            tags: self.tags.clone(),
+            ephemeral: self.ephemeral,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ConversationListView {
+    Active,
+    Archived,
+    All,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateConversationBody {
     pub title: Option<String>,
+    #[serde(default)]
+    pub ephemeral: bool,
+    pub folder_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -158,6 +220,51 @@ pub struct CreateConversationBody {
 pub struct PatchConversationBody {
     pub title: Option<String>,
     pub prompt_preset_id: Option<Option<String>>,
+    pub pinned: Option<bool>,
+    pub archived: Option<bool>,
+    pub folder_id: Option<Option<String>>,
+    pub tags: Option<Vec<String>>,
+    pub last_model: Option<Option<String>>,
+    pub temperature_override: Option<Option<f64>>,
+    pub max_tokens_override: Option<Option<i64>>,
+    pub system_prompt_override: Option<Option<String>>,
+    pub branch_picks: Option<std::collections::HashMap<String, String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PinConversationBody {
+    pub conversation_id: String,
+    pub pinned: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveConversationBody {
+    pub conversation_id: String,
+    pub archived: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MoveToFolderBody {
+    pub conversation_id: String,
+    pub folder_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TagConversationBody {
+    pub conversation_id: String,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToggleBookmarkBody {
+    pub conversation_id: String,
+    pub message_id: String,
+    pub bookmarked: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -194,4 +301,49 @@ pub struct SendMessageBody {
 pub struct SendMessageResponse {
     pub assistant_message: Option<ChatMessage>,
     pub conversation: Conversation,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EditMessageBody {
+    pub conversation_id: String,
+    pub message_id: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ForkConversationBody {
+    pub conversation_id: String,
+    pub message_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RegenerateBody {
+    pub conversation_id: String,
+    #[serde(default)]
+    pub create_branch: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateFromTemplateBody {
+    pub template_id: String,
+    pub title: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiMessagePreview {
+    pub role: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RetryMessageBody {
+    pub conversation_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
 }

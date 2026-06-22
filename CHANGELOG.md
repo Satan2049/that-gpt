@@ -5,6 +5,46 @@ All notable changes to ThatGPT are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-06-20
+
+Release notes: [docs/RELEASE_v2.5.0.md](docs/RELEASE_v2.5.0.md)
+
+**Windows desktop only.** First GitHub-ready release after the full ThatGPT roadmap (Phases 0–6).
+
+### Added
+
+- **Persian & English UI** — Full interface i18n, RTL layout, onboarding on first launch
+- **Projects (ChatGPT-style)** — Instructions, sources, new chat in project, settings modal
+- **ChatGPT-like chat list** — Context menu (share, rename, move to project, pin, archive, delete)
+- **Multi-provider profiles** — OpenAI-compatible APIs and Ollama with test connection
+- **Header model selector** — Capability badges (Vision, Image Gen, Tools, Reasoning, Embedding, Audio)
+- **Token usage & cost** — Footer stats, context bar, editable model prices
+- **Slash commands** — `/new`, `/clear`, `/model`, `/export`, `/temp`, `/help`, `/prompt`
+- **Library page** — Attachment index with filters
+- **Local knowledge base (RAG)** — Chunking, embeddings, citations `[1]` in replies
+- **Agent tools** — `web_search`, `search_knowledge_base`, `generate_image` (image-gen models)
+- **Conversation management** — Ctrl+K search, pin, archive, folders, ephemeral chat
+- **Productivity** — Bookmarks, fork, branching, templates, HTML share, command palette
+- **Usage analytics** — Token history in Settings → Storage
+- **Polish** — Skeleton loaders, j/k navigation, notifications, update check, confirm modals
+- **Empty chat** — Logo + suggestion chips; export overflow menu
+
+### Changed
+
+- **UI polish** — ChatGPT-style spacing, colors, compact message actions, simplified Settings (Advanced tab)
+- Rust package renamed `chat-nest` → `that-gpt` (`ThatGPT.exe` in Task Manager)
+- Removed right-side branches panel; alternates shown inline on messages
+- Screenshots and demo media documented under `docs/screenshots/`
+- Landing page and README updated for v2.5.0
+
+### Fixed
+
+- Model selector refresh button overflowing the dropdown
+- Sidebar and chat scroll containers (no overlapping lists / content under sidebar)
+- Bookmark filter trap when no bookmarked messages (Show all exit)
+- Image generation vs vision model routing (separate capabilities)
+- Theme localStorage migration from legacy `chatnest-theme`
+
 ## [2.2.0] - 2026-06-20
 
 Release notes: [docs/RELEASE_v2.2.0.md](docs/RELEASE_v2.2.0.md)
@@ -83,6 +123,7 @@ See [GitHub Releases](https://github.com/Satan2049/that-gpt/releases).
 
 First stable release.
 
+[2.5.0]: https://github.com/Satan2049/that-gpt/releases/tag/v2.5.0
 [2.2.0]: https://github.com/Satan2049/that-gpt/releases/tag/v2.2.0
 [2.0.0]: https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0
 [1.1.0]: https://github.com/Satan2049/that-gpt/releases/tag/v1.1.0

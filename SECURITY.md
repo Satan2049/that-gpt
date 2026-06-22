@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.2.x   | Yes       |
-| < 2.2   | No        |
+| 2.5.x   | Yes       |
+| < 2.5   | No        |
 
 Security fixes are applied to the latest release on the `main` branch.
 

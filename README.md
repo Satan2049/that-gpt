@@ -6,8 +6,8 @@
 
 **Local ChatGPT-style desktop chat for OpenAI-compatible APIs and Ollama**
 
-[![Version](https://img.shields.io/badge/version-2.2.0-6366f1?style=flat-square)](CHANGELOG.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-3f6fff?style=flat-square)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.5.0-6366f1?style=flat-square)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/License-MIT-3f6fff?style=flat-square)](LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-2-3f6fff?style=flat-square&logo=tauri&logoColor=white)](src-tauri/)
 [![Rust](https://img.shields.io/badge/Rust-2021-3f6fff?style=flat-square&logo=rust&logoColor=white)](src-tauri/)
 [![React](https://img.shields.io/badge/React-18-3f6fff?style=flat-square&logo=react&logoColor=white)](client/)
@@ -15,7 +15,7 @@
 
 [Features](#features) · [Screenshots](#screenshots) · [Installation](#installation) · [Development](#development) · [Build](#build) · [Changelog](CHANGELOG.md) · [Trust](#trust) · [Contributing](CONTRIBUTING.md)
 
-**[Landing page](https://satan2049.github.io/that-gpt/)** · **[v2.2.0 release notes](docs/RELEASE_v2.2.0.md)**
+**[Landing page](https://satan2049.github.io/that-gpt/)** · **[v2.5.0 release notes](docs/RELEASE_v2.5.0.md)**
 
 <img src="assets/banner.png" alt="ThatGPT banner" width="100%" />
 
@@ -27,37 +27,39 @@
 
 **ThatGPT** is an open-source **Windows desktop** chat client with a ChatGPT-inspired UI. Conversations, prompt presets, and multimodal attachments live in a React UI. A **Rust + Tauri** backend stores JSON on disk and proxies all model requests so your API key never enters the webview.
 
-**Design goals:** credentials stay in the desktop shell, no database overhead, any OpenAI-compatible endpoint.
+**Design goals:** credentials stay in the desktop shell, no database overhead, any OpenAI-compatible endpoint or local Ollama.
 
 ## Features
 
 | | |
 |---|---|
-| **Chat** | Persistent threads stored locally as JSON |
-| **Markdown** | GFM rendering with syntax-highlighted code blocks |
-| **Agent tools** | Tool-calling loop; stop or regenerate responses |
-| **Attachments** | Images, audio, text files, and PDFs |
-| **Vision** | JPEG, PNG, WebP with server-side validation |
-| **Presets** | Reusable system prompts with model, temperature, and token limits |
-| **Themes** | Light / dark UI with design tokens and Inter typography |
-| **Layout** | Responsive drawer on narrow windows; full sidebar on desktop |
-| **Reliability** | Retries, timeouts, and clear errors for provider failures |
-| **Settings UI** | API key, provider URL, models, timeout — all editable in-app |
-| **Streaming** | Assistant replies appear token-by-token |
-| **Export** | Download conversations as Markdown or JSON |
+| **ChatGPT-like UI** | Sidebar nav, pill composer, model dropdown, tabbed settings |
+| **Providers** | Multiple OpenAI-compatible profiles + Ollama (`/api/tags`) |
+| **Streaming** | True SSE streaming with smart scroll and stop generation |
+| **Agent tools** | Web search, knowledge search, analyze image/audio, **generate images** |
+| **Vision & image gen** | Separate badges — see images vs create images (`gpt-image-1`, DALL·E) |
+| **RAG** | Local knowledge base with embeddings, chunking, citation footnotes |
+| **Library** | Browse all attachments across conversations |
+| **Markdown** | GFM, LaTeX (KaTeX), Mermaid diagrams, syntax-highlighted code |
+| **Conversations** | Pin, archive, folders, Ctrl+K search, ephemeral (temporary) chat |
+| **Power user** | Branching, fork, templates, bookmarks, command palette, HTML export |
+| **Tokens & cost** | Usage footer, context bar, editable per-model pricing |
+| **Themes** | Light / dark with `prefers-reduced-motion` |
+| **Export** | Markdown, JSON, HTML share; copy thread as Markdown |
 
 ## Screenshots
 
 <table>
 <tr>
-<td width="33%"><img src="assets/screenshots/screenshot-chat.png" alt="Chat view" width="100%" /><br /><sub>Main chat</sub></td>
-<td width="33%"><img src="assets/screenshots/screenshot-presets.png" alt="Prompt presets" width="100%" /><br /><sub>Prompt presets</sub></td>
-<td width="33%"><img src="assets/screenshots/screenshot-dark.png" alt="Dark theme" width="100%" /><br /><sub>Dark theme</sub></td>
+<td width="33%"><img src="docs/screenshots/screenshot-chat.png" alt="Chat view" width="100%" /><br /><sub>Main chat</sub></td>
+<td width="33%"><img src="docs/screenshots/screenshot-models.png" alt="Models" width="100%" /><br /><sub>Models list</sub></td>
+<td width="33%"><img src="docs/screenshots/screenshot-personalization.png" alt="Personalization" width="100%" /><br /><sub>Personalization setting</sub></td>
+<td width="33%"><img src="docs/screenshots/screenshot-providers.png" alt="Providers" width="100%" /><br /><sub>Providers setting</sub></td>
 </tr>
 </table>
 
 <p align="center">
-  <img src="assets/screenshots/demo.gif" alt="ThatGPT demo" width="720" />
+  <img src="docs/screenshots/demo.gif" alt="ThatGPT demo" width="720" />
   <br />
   <sub>Demo GIF</sub>
 </p>
@@ -66,14 +68,14 @@
 
 ### Download (recommended)
 
-1. Open **[GitHub Releases — v2.2.0](https://github.com/Satan2049/that-gpt/releases/tag/v2.2.0)**.
+1. Open **[GitHub Releases — v2.5.0](https://github.com/Satan2049/that-gpt/releases/tag/v2.5.0)**.
 2. Download **portable** `.exe` or **NSIS setup** installer for Windows x64.
 3. Verify checksums — [`SHA256.txt`](SHA256.txt) and [docs/TRUST.md](docs/TRUST.md).
-4. *(Optional)* Review [VirusTotal reports (v2.2.0)](docs/TRUST.md#published-reports-v220).
+4. *(Optional)* Review [VirusTotal reports (v2.5.0)](docs/TRUST.md#published-reports-v250) after maintainers upload scans.
 
 ### Configure API access
 
-Open **Settings** in the app (header) to set your API key, base URL, default model, system prompt, timeout, and retries. Settings are saved to:
+Open **Settings** in the app (header `···` menu) to set your API key, providers, models, and optional features (web search, knowledge base, dev mode). Settings are saved to:
 
 ```text
 %APPDATA%\com.thatgpt.desktop\.env
@@ -89,6 +91,8 @@ AI_DEFAULT_SYSTEM_PROMPT=You are a helpful assistant.
 AI_REQUEST_TIMEOUT_MS=60000
 AI_MAX_RETRIES=2
 ```
+
+**Ollama:** Add an Ollama provider in Settings → Providers (`http://127.0.0.1:11434`).
 
 ### Build from source
 
@@ -117,9 +121,10 @@ Config template: [`src-tauri/.env.example`](src-tauri/.env.example)
 
 | Variable | Description |
 |----------|-------------|
-| `AI_API_KEY` | Provider API key (required) |
+| `AI_API_KEY` | Provider API key (required for cloud APIs) |
 | `AI_BASE_URL` | OpenAI-compatible base URL |
 | `AI_MODEL` | Default model id |
+| `AI_IMAGE_MODEL` | Image **generation** model (e.g. `gpt-image-1`) |
 | `AI_DEFAULT_SYSTEM_PROMPT` | Fallback system message for new chats |
 | `AI_REQUEST_TIMEOUT_MS` | Provider request timeout (ms) |
 | `AI_MAX_RETRIES` | Retry count for transient API errors |
@@ -148,13 +153,23 @@ release/                                    # after release:package
 SHA256.txt                                  # after release:hashes
 ```
 
+### Ship a GitHub release
+
+```powershell
+npm run build
+npm run release:package
+npm run release:hashes
+# Upload release/*.exe, release/*.zip, SHA256.txt
+# Add VirusTotal links to docs/TRUST.md and docs/RELEASE_v2.5.0.md
+```
+
 ## Architecture
 
 ```text
 React UI (Vite)
       │  Tauri invoke
       ▼
-Rust services ──► OpenAI-compatible API
+Rust services ──► OpenAI-compatible API / Ollama
       │
       └── JSON: %APPDATA%/com.thatgpt.desktop/data/
 ```
@@ -169,12 +184,12 @@ Details: [`docs/repository-intelligence.md`](docs/repository-intelligence.md)
 | Backend | Rust, Tokio, Reqwest, Serde |
 | Frontend | React 18, Vite, TypeScript, Zustand |
 | Storage | File-based JSON |
-| AI | OpenAI-compatible `/chat/completions` |
+| AI | OpenAI-compatible `/chat/completions`, `/images/generations`, embeddings |
 
 ## Trust
 
-- Verify downloads: [docs/TRUST.md](docs/TRUST.md) — v2.2.0 VirusTotal links added after release build
-- Historical v2.0.0 (ChatNest): [NSIS](https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1) · [Portable](https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1)
+- Verify downloads: [docs/TRUST.md](docs/TRUST.md)
+- Release notes: [docs/RELEASE_v2.5.0.md](docs/RELEASE_v2.5.0.md)
 - Report security issues: [SECURITY.md](SECURITY.md)
 - Checksums: [`SHA256.txt`](SHA256.txt)
 

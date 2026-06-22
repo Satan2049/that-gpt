@@ -1,0 +1,173 @@
+import type { Translations } from "../types";
+
+export const fa: Translations = {
+  nav: {
+    newChat: "گفتگوی جدید",
+    searchChats: "جستجوی گفتگوها",
+    library: "کتابخانه",
+    projects: "پروژه‌ها",
+    more: "بیشتر",
+    temporaryChat: "گفتگوی موقت",
+    archivedChats: "گفتگوهای بایگانی",
+    promptPresets: "پیش‌تنظیم پرامپت",
+    recents: "اخیر",
+    archived: "بایگانی",
+    attachmentsHint: "پیوست‌ها در پنل اصلی باز می‌شوند."
+  },
+  footer: {
+    connected: "متصل",
+    setupRequired: "نیاز به تنظیم",
+    settingsApi: "تنظیمات و کلید API"
+  },
+  chat: {
+    emptyTitle: "بزن بریم، یک مدل محلی را اذیت کن.",
+    emptySub: "هر چیزی بپرس — همه‌چیز روی سخت‌افزار خودت اجرا می‌شود.",
+    noBookmarks: "پیامی با نشانک در این گفتگو نیست.",
+    responding: "دستیار در حال پاسخ دادن است…",
+    bookmarks: "نشانک‌ها",
+    bookmarked: "نشانک‌شده",
+    showAll: "نمایش همه",
+    newMessages: "پیام‌های جدید",
+    askAnything: "هر چیزی بپرس",
+    selectConversation: "یک گفتگو انتخاب یا ایجاد کن",
+    stopGenerating: "توقف تولید",
+    sendMessage: "ارسال پیام",
+    uploadImage: "بارگذاری تصویر",
+    temporary: "موقت",
+    burnIt: "حذف کن",
+    ephemeralHint: "این گفتگو روی دیسک ذخیره نمی‌شود"
+  },
+  suggestions: [
+    "توضیح بده شبکه عصبی چطور یاد می‌گیرد",
+    "یک شعر کوتاه درباره باران بنویس",
+    "این regex برای ایمیل را دیباگ کن",
+    "یک تصویر از کلبه دنج در غروب بساز"
+  ],
+  messageActions: {
+    copy: "کپی",
+    share: "اشتراک",
+    regenerate: "تولید مجدد",
+    more: "بیشتر",
+    alternateReply: "ذخیره به‌عنوان پاسخ جایگزین",
+    edit: "ویرایش",
+    fork: "انشعاب از اینجا",
+    forkConversation: "انشعاب گفتگو از اینجا",
+    copied: "کپی شد",
+    copiedForSharing: "برای اشتراک کپی شد",
+    bookmark: "نشانک پیام",
+    removeBookmark: "حذف نشانک"
+  },
+  header: {
+    moreActions: "عملیات بیشتر",
+    exportMarkdown: "خروجی Markdown",
+    copyMarkdown: "کپی به‌صورت Markdown",
+    exportJson: "خروجی JSON",
+    shareHtml: "اشتراک HTML",
+    viewApiPrompt: "مشاهده پرامپت API",
+    settings: "تنظیمات"
+  },
+  shell: {
+    collapseSidebar: "جمع کردن نوار کناری",
+    expandSidebar: "باز کردن نوار کناری",
+    closeMenu: "بستن منو",
+    openMenu: "باز کردن منو",
+    resizeSidebar: "تغییر اندازه نوار کناری",
+    closeSidebar: "بستن نوار کناری"
+  },
+  projects: {
+    title: "پروژه‌ها",
+    newProject: "پروژه جدید",
+    noProjects: "هنوز پروژه‌ای نیست.",
+    notFound: "پروژه پیدا نشد.",
+    settings: "تنظیمات",
+    projectMenu: "منوی پروژه",
+    projectSettings: "تنظیمات پروژه",
+    newChatIn: "گفتگوی جدید در",
+    chats: "گفتگوها",
+    sources: "منابع",
+    noChats: "هنوز گفتگویی نیست",
+    noChatsSub: "گفتگوهای این پروژه اینجا نمایش داده می‌شوند.",
+    noSources: "هنوز منبعی نیست",
+    dropFiles: "فایل را اینجا رها کنید یا برای بارگذاری کلیک کنید",
+    uploading: "در حال بارگذاری…",
+    removeSource: "حذف",
+    addFilesHint: "افزودن فایل — PDF، TXT، MD، DOCX",
+    sourcesContextHint: "هنگام گفتگو در این پروژه در زمینه مدل گنجانده می‌شود.",
+    deleteTitle: "پروژه حذف شود؟",
+    deleteMessage: '«{name}» حذف شود؟ گفتگوها از پروژه خارج می‌شوند.'
+  },
+  projectSettings: {
+    title: "تنظیمات پروژه",
+    projectName: "نام پروژه",
+    instructions: "دستورالعمل‌ها",
+    instructionsHint: "زمینه را تنظیم کنید و نحوه پاسخ مدل در این پروژه را سفارشی کنید.",
+    instructionsPlaceholder:
+      "مثلاً به فارسی پاسخ بده. از فایل‌های بارگذاری‌شده استفاده کن. پاسخ‌ها کوتاه باشند.",
+    deleteProject: "حذف پروژه",
+    deleteConfirm: "این پروژه حذف شود؟ گفتگوها باقی می‌مانند اما از پروژه خارج می‌شوند.",
+    save: "ذخیره",
+    cancel: "لغو",
+    close: "بستن",
+    saving: "در حال ذخیره…"
+  },
+  settings: {
+    title: "تنظیمات",
+    close: "بستن",
+    general: "عمومی",
+    personalization: "شخصی‌سازی",
+    providers: "ارائه‌دهندگان و مدل‌ها",
+    data: "کنترل داده",
+    storage: "ذخیره‌سازی",
+    keyboard: "میانبرها",
+    appearance: "ظاهر",
+    light: "روشن",
+    dark: "تیره",
+    language: "زبان",
+    languageHint: "رابط برنامه را تغییر می‌دهد. جهت متن گفتگو به‌صورت خودکار تنظیم می‌شود.",
+    english: "English (انگلیسی)",
+    persian: "فارسی",
+    generalHint: "ThatGPT به‌صورت محلی روی دستگاه شما اجرا می‌شود. حساب ابری لازم نیست.",
+    save: "ذخیره",
+    saved: "ذخیره شد",
+    advanced: "پیشرفته"
+  },
+  onboarding: {
+    welcomeTitle: "به ThatGPT خوش آمدید",
+    welcomeBody:
+      "گفتگوی هوش مصنوعی محلی شما — خصوصی، سریع و کاملاً روی دستگاه خودتان. بیایید در چند قدم راه‌اندازی کنیم.",
+    languageTitle: "زبان خود را انتخاب کنید",
+    languageBody: "زبان رابط را انتخاب کنید. پیام‌ها برای فارسی و انگلیسی به‌صورت خودکار تراز می‌شوند.",
+    tipsTitle: "راهنمای سریع",
+    tipNewChat: "گفتگوی جدید — از نوار کناری یک مکالمه شروع کنید.",
+    tipProjects: "پروژه‌ها — گفتگوها را با دستورالعمل و فایل گروه‌بندی کنید.",
+    tipSettings: "تنظیمات — کلید API را برای اتصال به مدل اضافه کنید.",
+    back: "قبلی",
+    next: "بعدی",
+    getStarted: "شروع کن",
+    skip: "رد کردن"
+  },
+  common: {
+    close: "بستن",
+    delete: "حذف"
+  },
+  conversation: {
+    pinned: "سنجاق‌شده",
+    noArchived: "گفتگوی بایگانی‌شده‌ای نیست.",
+    noMatches: "موردی پیدا نشد.",
+    noConversations: "هنوز گفتگویی نیست.",
+    deleteTitle: "گفتگو حذف شود؟",
+    deleteMessage: '«{name}» حذف شود؟ این کار قابل بازگشت نیست.',
+    share: "اشتراک",
+    rename: "تغییر نام",
+    moveToProject: "انتقال به پروژه",
+    removeFromProject: "حذف از پروژه",
+    pinChat: "سنجاق گفتگو",
+    unpinChat: "برداشتن سنجاق",
+    archive: "بایگانی",
+    restore: "بازگردانی",
+    delete: "حذف",
+    moreOptions: "گزینه‌های گفتگو",
+    pin: "سنجاق",
+    unpin: "برداشتن سنجاق"
+  }
+};

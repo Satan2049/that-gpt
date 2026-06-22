@@ -70,11 +70,21 @@ pub(crate) struct ChatCompletionRequest {
     tools: Option<Vec<Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tool_choice: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stream_options: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
 struct ChatCompletionResponse {
     choices: Option<Vec<ChatCompletionChoice>>,
+    usage: Option<CompletionUsage>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CompletionUsage {
+    prompt_tokens: Option<u32>,
+    completion_tokens: Option<u32>,
+    total_tokens: Option<u32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -94,6 +104,7 @@ pub struct ParsedCompletion {
     pub content: String,
     pub tool_calls: Vec<ToolCall>,
     pub finish_reason: Option<String>,
+    pub usage: Option<crate::models::api::TokenUsage>,
 }
 
 impl ChatCompletionRequest {
@@ -114,6 +125,11 @@ impl ChatCompletionRequest {
             tools: tools.clone(),
             tool_choice: if tools.is_some() {
                 Some("auto".to_string())
+            } else {
+                None
+            },
+            stream_options: if stream {
+                Some(serde_json::json!({ "include_usage": true }))
             } else {
                 None
             },
@@ -303,6 +319,14 @@ pub fn parse_completion_response(body: &str) -> Result<ParsedCompletion, String>
         content,
         tool_calls: message.tool_calls.unwrap_or_default(),
         finish_reason: choice.finish_reason,
+        usage: data.usage.and_then(|u| {
+            let total = u.total_tokens?;
+            Some(crate::models::api::TokenUsage {
+                prompt_tokens: u.prompt_tokens.unwrap_or(0),
+                completion_tokens: u.completion_tokens.unwrap_or(0),
+                total_tokens: total,
+            })
+        }),
     })
 }
 
@@ -371,6 +395,20 @@ struct StreamToolFunctionDelta {
     arguments: Option<String>,
 }
 
+pub fn parse_stream_usage_payload(data: &str) -> Option<crate::models::api::TokenUsage> {
+    let trimmed = data.trim();
+    if trimmed == "[DONE]" {
+        return None;
+    }
+    let parsed: serde_json::Value = serde_json::from_str(trimmed).ok()?;
+    let usage = parsed.get("usage")?;
+    Some(crate::models::api::TokenUsage {
+        prompt_tokens: usage.get("prompt_tokens")?.as_u64()? as u32,
+        completion_tokens: usage.get("completion_tokens")?.as_u64()? as u32,
+        total_tokens: usage.get("total_tokens")?.as_u64()? as u32,
+    })
+}
+
 pub fn parse_stream_data_payload(data: &str) -> Option<Option<String>> {
     let trimmed = data.trim();
     if trimmed == "[DONE]" {
@@ -414,7 +452,8 @@ pub fn parse_stream_tool_deltas(data: &str) -> Vec<(usize, Option<String>, Optio
         .collect()
 }
 
-pub const TOOLS_SYSTEM_HINT: &str = "You can analyze images, audio, PDFs, and text files attached by the user. \
-When you need deeper analysis of an attachment, use the available tools: \
-analyze_image (vision model), analyze_audio (transcription), and read_attachment (full text/PDF content). \
-For images attached to the current message you can often answer directly; use analyze_image for detailed inspection or older attachments.";
+pub const TOOLS_SYSTEM_HINT: &str = "You can analyze images (vision), generate new images, search the web, search the local knowledge base, and work with audio, PDF, and text attachments. \
+When you need deeper analysis of an attachment, use: analyze_image (vision), analyze_audio (transcription), read_attachment (full text/PDF). \
+When the user asks you to create, draw, or generate an image, use generate_image. \
+For current events or external facts use web_search; for the user's indexed docs use search_knowledge_base. \
+For images attached to the current message you can often answer directly if your model supports vision; use analyze_image for detailed inspection or older attachments.";

@@ -1,7 +1,5 @@
 use crate::error::AppError;
 
-const MAX_EXTRACTED_CHARS: usize = 4000;
-
 pub fn extract_pdf_text(buffer: &[u8]) -> Result<String, AppError> {
     let text = pdf_extract::extract_text_from_mem(buffer).map_err(|e| {
         AppError::bad_request(format!(
@@ -19,11 +17,12 @@ pub fn extract_pdf_text(buffer: &[u8]) -> Result<String, AppError> {
     Ok(trimmed.to_string())
 }
 
-pub fn pdf_text_preview(full: &str) -> String {
-    if full.chars().count() > MAX_EXTRACTED_CHARS {
+pub fn pdf_text_preview(full: &str, max_chars: usize) -> String {
+    let limit = max_chars.max(500);
+    if full.chars().count() > limit {
         format!(
             "{}…",
-            full.chars().take(MAX_EXTRACTED_CHARS).collect::<String>()
+            full.chars().take(limit).collect::<String>()
         )
     } else {
         full.to_string()
@@ -37,7 +36,7 @@ mod tests {
     #[test]
     fn preview_truncates_long_text() {
         let long = "a".repeat(5000);
-        let preview = pdf_text_preview(&long);
+        let preview = pdf_text_preview(&long, 4000);
         assert!(preview.ends_with('…'));
         assert!(preview.chars().count() <= 4001);
     }

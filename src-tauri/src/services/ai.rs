@@ -9,8 +9,11 @@ use crate::error::AppError;
 use crate::models::ai::{
     build_completion_request_body, parse_completion_response, parse_stream_data_payload, ToolCall,
 };
-use crate::models::api::{ConnectionTestResult, ModelsListResult};
+use crate::models::api::{ConnectionTestResult, ModelInfo, ModelsListResult, TokenUsage};
+use crate::models::provider::ProviderKind;
 use crate::models::ChatCompletionMessage;
+
+use crate::services::model_catalog::infer_model_infos;
 
 const RETRYABLE_STATUS: [u16; 4] = [429, 502, 503, 504];
 
@@ -53,12 +56,14 @@ struct AiRuntime {
     config: AppConfig,
     http: Client,
     base_url: String,
+    provider_kind: ProviderKind,
 }
 
 impl AiRuntime {
     fn from_state(state: &AppState) -> Result<Self, AppError> {
         let config = state.snapshot_config();
-        if config.ai_api_key.trim().is_empty() {
+        let provider_kind = ProviderKind::from_base_url(&config.ai_base_url);
+        if config.ai_api_key.trim().is_empty() && provider_kind != ProviderKind::Ollama {
             return Err(AppError::ai_provider(user_message_for_ai_error(
                 &AiClientError::new("AI_API_KEY is not configured.", AiErrorCode::InvalidKey),
             )));
@@ -68,11 +73,54 @@ impl AiRuntime {
             base_url: config.ai_base_url.trim_end_matches('/').to_string(),
             http: state.snapshot_http(),
             config,
+            provider_kind,
+        })
+    }
+
+    fn from_credentials(
+        state: &AppState,
+        kind: ProviderKind,
+        base_url: &str,
+        api_key: &str,
+    ) -> Result<Self, AppError> {
+        let config = state.snapshot_config();
+        if api_key.trim().is_empty() && kind != ProviderKind::Ollama {
+            return Err(AppError::ai_provider(
+                "API key is required for this provider.".to_string(),
+            ));
+        }
+        Ok(Self {
+            base_url: base_url.trim_end_matches('/').to_string(),
+            http: state.snapshot_http(),
+            config: AppConfig {
+                ai_api_key: api_key.to_string(),
+                ai_base_url: base_url.to_string(),
+                ai_model: config.ai_model,
+                ai_image_model: config.ai_image_model,
+                ai_audio_model: config.ai_audio_model,
+                ai_default_system_prompt: config.ai_default_system_prompt,
+                ai_request_timeout_ms: config.ai_request_timeout_ms,
+                ai_max_retries: config.ai_max_retries,
+                ai_context_message_limit: config.ai_context_message_limit,
+                pdf_preview_char_limit: config.pdf_preview_char_limit,
+                knowledge_base_enabled: config.knowledge_base_enabled,
+                knowledge_base_path: config.knowledge_base_path,
+                knowledge_use_embeddings: config.knowledge_use_embeddings,
+                knowledge_embedding_model: config.knowledge_embedding_model,
+                web_search_enabled: config.web_search_enabled,
+                dev_mode_enabled: config.dev_mode_enabled,
+            },
+            provider_kind: kind,
         })
     }
 
     fn auth_header(&self) -> String {
-        format!("Bearer {}", self.config.ai_api_key)
+        let key = self.config.ai_api_key.trim();
+        if key.is_empty() {
+            "Bearer ollama".to_string()
+        } else {
+            format!("Bearer {key}")
+        }
     }
 }
 
@@ -194,6 +242,104 @@ fn should_fallback_to_non_stream(error: &AiClientError) -> bool {
 
 pub async fn list_models(state: &AppState) -> Result<ModelsListResult, AppError> {
     let runtime = AiRuntime::from_state(state)?;
+    list_models_for_runtime(&runtime).await
+}
+
+pub async fn list_models_for_provider(
+    kind: ProviderKind,
+    base_url: &str,
+    api_key: &str,
+    state: &AppState,
+) -> Result<ModelsListResult, AppError> {
+    let runtime = AiRuntime::from_credentials(state, kind, base_url, api_key)?;
+    list_models_for_runtime(&runtime).await
+}
+
+pub async fn test_provider_connection(
+    kind: ProviderKind,
+    base_url: &str,
+    api_key: &str,
+    default_model: &str,
+) -> Result<ConnectionTestResult, AppError> {
+    if base_url.trim().is_empty() {
+        return Ok(ConnectionTestResult {
+            ok: false,
+            message: "Base URL is required.".to_string(),
+            model_count: None,
+        });
+    }
+    if default_model.trim().is_empty() && kind != ProviderKind::Ollama {
+        return Ok(ConnectionTestResult {
+            ok: false,
+            message: "Default model is required.".to_string(),
+            model_count: None,
+        });
+    }
+
+    let http = Client::builder()
+        .timeout(std::time::Duration::from_millis(15_000))
+        .build()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let runtime = AiRuntime {
+        config: AppConfig {
+            ai_api_key: api_key.to_string(),
+            ai_base_url: base_url.to_string(),
+            ai_model: default_model.to_string(),
+            ai_image_model: String::new(),
+            ai_audio_model: String::new(),
+            ai_default_system_prompt: String::new(),
+            ai_request_timeout_ms: 15_000,
+            ai_max_retries: 0,
+            ai_context_message_limit: 0,
+            pdf_preview_char_limit: 4000,
+            knowledge_base_enabled: false,
+            knowledge_base_path: String::new(),
+            knowledge_use_embeddings: false,
+            knowledge_embedding_model: "nomic-embed-text".to_string(),
+            web_search_enabled: true,
+            dev_mode_enabled: false,
+        },
+        http,
+        base_url: base_url.trim_end_matches('/').to_string(),
+        provider_kind: kind,
+    };
+
+    match list_models_for_runtime(&runtime).await {
+        Ok(result) => Ok(ConnectionTestResult {
+            ok: true,
+            message: "Connected successfully.".to_string(),
+            model_count: Some(result.models.len()),
+        }),
+        Err(AppError::AiProvider(message)) => Ok(ConnectionTestResult {
+            ok: false,
+            message,
+            model_count: None,
+        }),
+        Err(other) => Err(other),
+    }
+}
+
+async fn list_models_for_runtime(runtime: &AiRuntime) -> Result<ModelsListResult, AppError> {
+    let models = if runtime.provider_kind == ProviderKind::Ollama {
+        list_ollama_models(runtime).await?
+    } else {
+        list_openai_compatible_models(runtime).await?
+    };
+
+    let model_infos = infer_model_infos(&models);
+    Ok(ModelsListResult {
+        models: models.clone(),
+        model_infos,
+        source: if runtime.provider_kind == ProviderKind::Ollama {
+            "ollama".to_string()
+        } else {
+            "provider".to_string()
+        },
+    })
+}
+
+async fn list_openai_compatible_models(runtime: &AiRuntime) -> Result<Vec<String>, AppError> {
     let url = format!("{}/models", runtime.base_url);
 
     let response = runtime
@@ -246,10 +392,54 @@ pub async fn list_models(state: &AppState) -> Result<ModelsListResult, AppError>
         ));
     }
 
-    Ok(ModelsListResult {
-        models,
-        source: "provider".to_string(),
-    })
+    Ok(models)
+}
+
+async fn list_ollama_models(runtime: &AiRuntime) -> Result<Vec<String>, AppError> {
+    let root = runtime
+        .base_url
+        .trim_end_matches("/v1")
+        .trim_end_matches('/');
+    let url = format!("{root}/api/tags");
+
+    let response = runtime
+        .http
+        .get(&url)
+        .header("Authorization", runtime.auth_header())
+        .send()
+        .await
+        .map_err(|err| AppError::ai_provider(user_message_for_ai_error(&map_reqwest_error(err))))?;
+
+    if !response.status().is_success() {
+        let status = response.status().as_u16();
+        let text = response.text().await.unwrap_or_default();
+        let err = classify_ai_http_error(status, &text);
+        return Err(AppError::ai_provider(user_message_for_ai_error(&err)));
+    }
+
+    let body: serde_json::Value = response.json().await.map_err(|e| {
+        AppError::ai_provider(format!("Could not parse Ollama models response: {e}"))
+    })?;
+
+    let mut models: Vec<String> = body
+        .get("models")
+        .and_then(|m| m.as_array())
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| item.get("name").and_then(|name| name.as_str()))
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+
+    if models.is_empty() {
+        return list_openai_compatible_models(runtime).await;
+    }
+
+    models.sort();
+    models.dedup();
+    Ok(models)
 }
 
 pub async fn test_api_connection(state: &AppState) -> Result<ConnectionTestResult, AppError> {
@@ -277,6 +467,7 @@ pub struct CompletionResult {
     pub content: String,
     pub tool_calls: Vec<ToolCall>,
     pub cancelled: bool,
+    pub usage: Option<TokenUsage>,
 }
 
 pub async fn create_chat_completion(
@@ -321,6 +512,7 @@ pub async fn create_chat_completion_non_stream(
                 content: String::new(),
                 tool_calls: Vec::new(),
                 cancelled: true,
+                usage: None,
             });
         }
 
@@ -365,6 +557,7 @@ pub async fn create_chat_completion_non_stream(
                     content: parsed.content,
                     tool_calls: parsed.tool_calls,
                     cancelled: false,
+                usage: None,
                 });
             }
             Err(err) => {
@@ -506,6 +699,7 @@ where
                 content: String::new(),
                 tool_calls: Vec::new(),
                 cancelled: true,
+                usage: None,
             });
         }
 
@@ -517,6 +711,7 @@ where
                     content: String::new(),
                     tool_calls: Vec::new(),
                     cancelled: true,
+                usage: None,
                 });
             }
         }
@@ -572,6 +767,7 @@ where
                 content: String::new(),
                 tool_calls: Vec::new(),
                 cancelled: true,
+                usage: None,
             });
         }
 
@@ -583,6 +779,7 @@ where
                     content: String::new(),
                     tool_calls: Vec::new(),
                     cancelled: true,
+                usage: None,
                 });
             }
         }
@@ -621,6 +818,7 @@ where
                     content: String::new(),
                     tool_calls: Vec::new(),
                     cancelled: true,
+                usage: None,
                 });
                 }
 
@@ -631,6 +829,7 @@ where
                     content: parsed.content,
                     tool_calls: parsed.tool_calls,
                     cancelled: false,
+                    usage: parsed.usage,
                 });
             }
             Err(err) => {
@@ -667,6 +866,7 @@ where
                     content: String::new(),
                     tool_calls: Vec::new(),
                     cancelled: true,
+                usage: None,
                 });
     }
 
@@ -689,6 +889,7 @@ where
     let mut stream = response.bytes_stream();
     let mut buffer = String::new();
     let mut content = String::new();
+    let mut usage: Option<TokenUsage> = None;
 
     while let Some(chunk) = stream.next().await {
         if is_cancelled(cancel) {
@@ -696,6 +897,7 @@ where
                 content,
                 tool_calls: Vec::new(),
                 cancelled: true,
+                usage: None,
             });
         }
 
@@ -713,6 +915,10 @@ where
             let data = line.strip_prefix("data:").unwrap_or("").trim();
             if data.is_empty() {
                 continue;
+            }
+
+            if let Some(parsed_usage) = crate::models::ai::parse_stream_usage_payload(data) {
+                usage = Some(parsed_usage);
             }
 
             match parse_stream_data_payload(data) {
@@ -733,6 +939,7 @@ where
                 content: String::new(),
                 tool_calls: Vec::new(),
                 cancelled: true,
+                usage: None,
             });
         }
         return Err(AiClientError::new(
@@ -745,6 +952,7 @@ where
         content,
         tool_calls: Vec::new(),
         cancelled: false,
+        usage,
     })
 }
 
@@ -778,5 +986,18 @@ mod tests {
             crate::models::ai::parse_stream_data_payload(payload),
             Some(Some("Hello".to_string()))
         );
+    }
+
+    #[test]
+    fn cancel_flag_is_honored() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc;
+
+        let cancel = Arc::new(AtomicBool::new(true));
+        assert!(is_cancelled(Some(&cancel)));
+
+        cancel.store(false, Ordering::Relaxed);
+        assert!(!is_cancelled(Some(&cancel)));
+        assert!(!is_cancelled(None));
     }
 }

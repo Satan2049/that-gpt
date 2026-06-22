@@ -1,6 +1,6 @@
 {
   "name": "that-gpt",
-  "version": "2.2.0",
+  "version": "2.5.0",
   "description": "ThatGPT — local ChatGPT-style desktop chat for OpenAI-compatible APIs and Ollama",
   "license": "MIT",
   "private": false,

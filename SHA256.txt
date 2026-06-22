@@ -1,7 +1,7 @@
-﻿# ThatGPT SHA256 checksums
+# ThatGPT SHA256 checksums
 # Product: ThatGPT
-# Version: 2.2.0
-# Generated: 2026-06-20 22:00:50 UTC
+# Version: 2.5.0
+# Generated: 2026-06-22 20:36:49 UTC
 #
 # Verify on Windows (PowerShell):
 #   Get-FileHash -Algorithm SHA256 <file>
@@ -9,7 +9,7 @@
 
 4503ba7282e0310209b089f7f2748cdff1484073da5cfe42d797fc226521754e  assets/banner.png
 fb738973d626d5f2260c7b250953a897cb71e9f9db2a98fa326eed967655751e  assets/logo.png
-e819934172c2dd0a47618eb46c0ea59df53d1c8749c2f2a0f7c41e47ebdca6bc  release/ChatNest_0.1.0_x64-setup.exe
-96feacaf6ab8d2b782d7ae2e2103b854e3d2cb0c84fca2410048915e7fe697bd  release/ChatNest-0.1.0-windows-x64-portable.exe
-eb5a75c5e4b6c3871256737639a478877f0d41a6dbfda729a32973d765e11805  release/ChatNest-0.1.0-windows-x64-portable.zip
-85d354818e206fa9f55710d050b0587e53210b2382880017f0ccbf6ea61c1167  release/ChatNest-0.1.0-windows-x64-setup.zip
+3eeea1fbf3207b093ad5d184825efe1b844166d1aeeb87d86fac3626ea625ddc  release/ThatGPT_2.5.0_x64-setup.exe
+e8fe3595100696078676af66ee53ba99d6b9ad402d64f21d8ea9f6f6b68a9ecf  release/ThatGPT-2.5.0-windows-x64-portable.exe
+466a6bfd2598ea6540c59a811743b2348ec06d5abeb68a434cc93238b00509aa  release/ThatGPT-2.5.0-windows-x64-portable.zip
+f0e160be7985df8d054b1ac2463ef240e5a141f05ced3ace2d4ff51a5f1bc587  release/ThatGPT-2.5.0-windows-x64-setup.zip

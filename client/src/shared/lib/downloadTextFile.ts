@@ -17,7 +17,10 @@ function safeFilename(title: string): string {
   return cleaned || "conversation";
 }
 
-export function conversationExportFilename(title: string, format: "json" | "markdown"): string {
-  const ext = format === "json" ? "json" : "md";
+export function conversationExportFilename(
+  title: string,
+  format: "json" | "markdown" | "html"
+): string {
+  const ext = format === "json" ? "json" : format === "html" ? "html" : "md";
   return `${safeFilename(title)}.${ext}`;
 }

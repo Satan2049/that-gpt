@@ -14,6 +14,10 @@ const MAX_PDF_BYTES: usize = 5 * 1024 * 1024;
 
 const PDF_MIMES: &[&str] = &["application/pdf"];
 
+const DOCX_MIMES: &[&str] = &[
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
 const TEXT_MIMES: &[&str] = &[
     "text/plain",
     "text/markdown",
@@ -39,6 +43,7 @@ const AUDIO_MIMES: &[&str] = &[
 pub fn validate_attachments(
     attachments: Option<Vec<AttachmentEntry>>,
     legacy_images: Option<Vec<ImageEntry>>,
+    pdf_preview_char_limit: usize,
 ) -> Result<Vec<ChatAttachment>, AppError> {
     let mut entries: Vec<AttachmentEntry> = attachments.unwrap_or_default();
     if let Some(images) = legacy_images {
@@ -63,12 +68,12 @@ pub fn validate_attachments(
 
     let mut out = Vec::with_capacity(entries.len());
     for entry in entries {
-        out.push(validate_one(entry)?);
+        out.push(validate_one(entry, pdf_preview_char_limit)?);
     }
     Ok(out)
 }
 
-fn validate_one(entry: AttachmentEntry) -> Result<ChatAttachment, AppError> {
+fn validate_one(entry: AttachmentEntry, pdf_preview_char_limit: usize) -> Result<ChatAttachment, AppError> {
     let mime = entry.mime_type.trim().to_lowercase();
     let cleaned: String = entry
         .base64
@@ -133,9 +138,27 @@ fn validate_one(entry: AttachmentEntry) -> Result<ChatAttachment, AppError> {
             )));
         }
         let full_text = super::pdf_text::extract_pdf_text(&buffer)?;
-        let preview = super::pdf_text::pdf_text_preview(&full_text);
+        let preview = super::pdf_text::pdf_text_preview(&full_text, pdf_preview_char_limit);
         return Ok(ChatAttachment {
             kind: AttachmentKind::Pdf,
+            mime_type: mime,
+            base64: cleaned,
+            filename,
+            text_content: Some(preview),
+        });
+    }
+
+    if DOCX_MIMES.contains(&mime.as_str()) {
+        if buffer.len() > MAX_PDF_BYTES {
+            return Err(AppError::bad_request(format!(
+                "Each DOCX must be at most {}MB",
+                MAX_PDF_BYTES / (1024 * 1024)
+            )));
+        }
+        let full_text = super::docx_text::extract_docx_text(&buffer)?;
+        let preview = super::pdf_text::pdf_text_preview(&full_text, pdf_preview_char_limit);
+        return Ok(ChatAttachment {
+            kind: AttachmentKind::Text,
             mime_type: mime,
             base64: cleaned,
             filename,
@@ -169,7 +192,7 @@ fn validate_one(entry: AttachmentEntry) -> Result<ChatAttachment, AppError> {
     }
 
     Err(AppError::bad_request(
-        "Unsupported file type. Allowed: images (JPEG, PNG, WebP, GIF), audio (MP3, WAV, WebM, OGG, M4A), text (TXT, MD, CSV, JSON, HTML, XML), PDF",
+        "Unsupported file type. Allowed: images (JPEG, PNG, WebP, GIF), audio (MP3, WAV, WebM, OGG, M4A), text (TXT, MD, CSV, JSON, HTML, XML), PDF, DOCX",
     ))
 }
 
@@ -210,6 +233,7 @@ mod tests {
                 filename: Some("test.txt".to_string()),
             }]),
             None,
+            4000,
         )
         .unwrap();
         assert_eq!(result.len(), 1);
@@ -226,6 +250,7 @@ mod tests {
                 mime_type: "image/png".to_string(),
                 base64,
             }]),
+            4000,
         )
         .unwrap();
         assert_eq!(result.len(), 1);

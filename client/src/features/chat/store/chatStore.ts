@@ -1,8 +1,12 @@
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { conversationExportFilename, downloadTextFile } from "../../../shared/lib/downloadTextFile";
+import { toast } from "../../../shared/components/toastStore";
 import { create } from "zustand";
 import type { Conversation, ConversationSummary, PendingAttachmentPayload } from "../types/chat.types";
+import type { TokenUsage, KnowledgeCitation } from "../../settings/types/models.types";
+import type { Folder } from "../../folders/types/folder.types";
 import * as chatApi from "../services/chatApi";
+import * as folderApi from "../../folders/services/folderApi";
 
 type StreamStartPayload = {
   conversationId: string;
@@ -41,8 +45,32 @@ export type ToolActivityItem = {
   detail: string;
 };
 
+type ChatUsagePayload = {
+  conversationId: string;
+  messageId: string;
+  usage: TokenUsage;
+};
+
+type ChatCitationsPayload = {
+  conversationId: string;
+  messageId: string;
+  citations: KnowledgeCitation[];
+};
+
+type GeneratedImagePayload = {
+  conversationId: string;
+  messageId: string;
+  mimeType: string;
+  base64: string;
+};
+
+export type SidebarPanel = "chats" | "projects" | "archived" | "library";
+
 type ChatState = {
   summaries: ConversationSummary[];
+  folders: Folder[];
+  sidebarPanel: SidebarPanel;
+  selectedFolderId: string | null;
   activeConversationId: string | null;
   activeConversation: Conversation | null;
   loadingList: boolean;
@@ -52,31 +80,81 @@ type ChatState = {
   toolActivity: ToolActivityItem[];
   exporting: boolean;
   error: string | null;
+  retryAfterMessageId: string | null;
+  editingMessageId: string | null;
   searchQuery: string;
+  lastUsage: TokenUsage | null;
+  citationsByMessageId: Record<string, KnowledgeCitation[]>;
+  showBookmarksOnly: boolean;
   loadConversations: () => Promise<void>;
+  loadFolders: () => Promise<void>;
+  setSidebarPanel: (panel: SidebarPanel) => Promise<void>;
+  setSelectedFolderId: (folderId: string | null) => void;
   searchConversations: (query: string) => Promise<void>;
   selectConversation: (id: string) => Promise<void>;
-  createConversation: () => Promise<void>;
+  createConversation: (options?: { ephemeral?: boolean; folderId?: string }) => Promise<void>;
+  createConversationInFolder: (folderId: string) => Promise<void>;
+  createFolder: (name: string) => Promise<void>;
+  patchFolder: (
+    id: string,
+    patch: { name?: string; instructions?: string | null }
+  ) => Promise<void>;
+  addFolderSource: (
+    folderId: string,
+    filename: string,
+    mimeType: string,
+    dataBase64: string
+  ) => Promise<void>;
+  removeFolderSource: (folderId: string, sourceId: string) => Promise<void>;
+  deleteFolder: (id: string) => Promise<void>;
+  pinConversation: (id: string, pinned: boolean) => Promise<void>;
+  archiveConversation: (id: string, archived: boolean) => Promise<void>;
+  moveConversationToFolder: (id: string, folderId: string | null) => Promise<void>;
+  burnActiveEphemeral: () => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
   patchConversation: (patch: {
     title?: string;
     promptPresetId?: string | null;
+    lastModel?: string | null;
+    temperatureOverride?: number | null;
+    maxTokensOverride?: number | null;
+    systemPromptOverride?: string | null;
+    branchPicks?: Record<string, string>;
   }) => Promise<void>;
   renameConversation: (id: string, title: string) => Promise<void>;
   sendMessage: (text: string, attachments?: PendingAttachmentPayload[]) => Promise<void>;
-  regenerateLastResponse: () => Promise<void>;
+  regenerateLastResponse: (createBranch?: boolean) => Promise<void>;
+  forkConversation: (messageId: string) => Promise<void>;
+  selectBranch: (parentId: string, assistantId: string) => Promise<void>;
+  editMessage: (messageId: string, content: string) => Promise<void>;
+  retryMessage: (messageId?: string) => Promise<void>;
+  setEditingMessageId: (messageId: string | null) => void;
   stopGeneration: () => Promise<void>;
-  exportActiveConversation: (format: "json" | "markdown") => Promise<void>;
+  exportActiveConversation: (format: "json" | "markdown" | "html") => Promise<void>;
   onStreamStart: (payload: StreamStartPayload) => void;
   onStreamChunk: (payload: StreamChunkPayload) => void;
   onStreamCancelled: (payload: StreamCancelledPayload) => void;
   onToolCall: (payload: ToolCallPayload) => void;
   onToolResult: (payload: ToolResultPayload) => void;
+  onChatUsage: (payload: ChatUsagePayload) => void;
+  onChatCitations: (payload: ChatCitationsPayload) => void;
+  onGeneratedImage: (payload: GeneratedImagePayload) => void;
+  copyConversationMarkdown: () => Promise<void>;
+  toggleMessageBookmark: (messageId: string, bookmarked: boolean) => Promise<void>;
+  setShowBookmarksOnly: (value: boolean) => void;
   clearError: () => void;
 };
 
+async function fetchSummariesForPanel(panel: SidebarPanel) {
+  const view = panel === "archived" ? "archived" : "active";
+  return chatApi.apiListConversations(view);
+}
+
 export const useChatStore = create<ChatState>((set, get) => ({
   summaries: [],
+  folders: [],
+  sidebarPanel: "chats",
+  selectedFolderId: null,
   activeConversationId: null,
   activeConversation: null,
   loadingList: false,
@@ -87,8 +165,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
   searchQuery: "",
   exporting: false,
   error: null,
+  retryAfterMessageId: null,
+  editingMessageId: null,
+  lastUsage: null,
+  citationsByMessageId: {},
+  showBookmarksOnly: false,
 
-  clearError: () => set({ error: null }),
+  clearError: () => set({ error: null, retryAfterMessageId: null }),
+
+  setEditingMessageId: (messageId) => set({ editingMessageId: messageId }),
 
   onStreamStart: ({ conversationId, messageId }) => {
     set((state) => {
@@ -146,6 +231,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       return {
         streamingMessageId: null,
+        sending: false,
+        toolActivity: [],
         activeConversation: {
           ...state.activeConversation,
           messages: state.activeConversation.messages.filter(
@@ -185,13 +272,91 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
   },
 
+  onChatUsage: ({ conversationId, usage }) => {
+    set((state) => {
+      if (state.activeConversationId !== conversationId) return state;
+      return { lastUsage: usage };
+    });
+  },
+
+  onChatCitations: ({ conversationId, messageId, citations }) => {
+    set((state) => {
+      if (state.activeConversationId !== conversationId) return state;
+      return {
+        citationsByMessageId: {
+          ...state.citationsByMessageId,
+          [messageId]: citations
+        }
+      };
+    });
+  },
+
+  onGeneratedImage: ({ conversationId, messageId, mimeType, base64 }) => {
+    const imageMime =
+      mimeType === "image/jpeg" ||
+      mimeType === "image/png" ||
+      mimeType === "image/webp" ||
+      mimeType === "image/gif"
+        ? mimeType
+        : "image/png";
+
+    set((state) => {
+      if (state.activeConversationId !== conversationId || !state.activeConversation) {
+        return state;
+      }
+      return {
+        activeConversation: {
+          ...state.activeConversation,
+          messages: state.activeConversation.messages.map((message) =>
+            message.id === messageId
+              ? {
+                  ...message,
+                  images: [
+                    ...(message.images ?? []),
+                    { mimeType: imageMime, base64 }
+                  ]
+                }
+              : message
+          )
+        }
+      };
+    });
+  },
+
+  copyConversationMarkdown: async () => {
+    const { activeConversationId } = get();
+    if (!activeConversationId) return;
+    try {
+      const markdown = await chatApi.apiExportConversation(activeConversationId, "markdown");
+      await navigator.clipboard.writeText(markdown);
+      toast("Conversation copied as Markdown");
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to copy conversation") });
+    }
+  },
+
+  toggleMessageBookmark: async (messageId, bookmarked) => {
+    const id = get().activeConversationId;
+    if (!id) return;
+    try {
+      const conversation = await chatApi.apiToggleMessageBookmark(id, messageId, bookmarked);
+      set({ activeConversation: conversation });
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to update bookmark") });
+    }
+  },
+
+  setShowBookmarksOnly: (value) => set({ showBookmarksOnly: value }),
+
   loadConversations: async () => {
     set({ loadingList: true, error: null });
     try {
-      const summaries = await chatApi.apiListConversations();
+      const { sidebarPanel } = get();
+      const view = sidebarPanel === "archived" ? "archived" : "active";
+      const summaries = await chatApi.apiListConversations(view);
       set({ summaries, loadingList: false, searchQuery: "" });
       const { activeConversationId } = get();
-      if (!activeConversationId && summaries.length > 0) {
+      if (!activeConversationId && summaries.length > 0 && sidebarPanel === "chats") {
         await get().selectConversation(summaries[0].id);
       }
     } catch (e) {
@@ -201,6 +366,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
     }
   },
+
+  loadFolders: async () => {
+    try {
+      const folders = await folderApi.apiListFolders();
+      set({ folders });
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to load projects") });
+    }
+  },
+
+  setSidebarPanel: async (panel) => {
+    set({ sidebarPanel: panel, searchQuery: "" });
+    await get().loadConversations();
+    if (panel === "projects") {
+      await get().loadFolders();
+    }
+  },
+
+  setSelectedFolderId: (folderId) => set({ selectedFolderId: folderId }),
 
   searchConversations: async (query) => {
     set({ loadingList: true, error: null, searchQuery: query });
@@ -220,7 +404,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       loadingConversation: true,
       error: null,
       activeConversationId: id,
-      streamingMessageId: null
+      streamingMessageId: null,
+      lastUsage: null,
+      citationsByMessageId: {}
     });
     try {
       const conversation = await chatApi.apiGetConversation(id);
@@ -233,23 +419,32 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  createConversation: async () => {
+  createConversation: async (options) => {
     set({ error: null });
     try {
-      const conversation = await chatApi.apiCreateConversation();
-      set((state) => ({
-        summaries: [
-          {
-            id: conversation.id,
-            title: conversation.title,
-            updatedAt: conversation.updatedAt
-          },
-          ...state.summaries
-        ],
-        activeConversationId: conversation.id,
-        activeConversation: conversation,
-        streamingMessageId: null
-      }));
+      const folderId = options?.folderId ?? get().selectedFolderId ?? undefined;
+      const conversation = await chatApi.apiCreateConversation({
+        ephemeral: options?.ephemeral,
+        folderId: options?.ephemeral ? undefined : folderId
+      });
+      if (!conversation.ephemeral) {
+        const summaries = await chatApi.apiListConversations("active");
+        set((state) => ({
+          summaries,
+          activeConversationId: conversation.id,
+          activeConversation: conversation,
+          streamingMessageId: null,
+          sidebarPanel: "chats"
+        }));
+      } else {
+        set({
+          summaries: [conversation, ...get().summaries.filter((s) => s.id !== conversation.id)],
+          activeConversationId: conversation.id,
+          activeConversation: conversation,
+          streamingMessageId: null,
+          sidebarPanel: "chats"
+        });
+      }
     } catch (e) {
       set({
         error: errorMessage(e, "Failed to create conversation")
@@ -257,11 +452,134 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
+  createConversationInFolder: async (folderId) => {
+    await get().createConversation({ folderId });
+  },
+
+  patchFolder: async (id, patch) => {
+    set({ error: null });
+    try {
+      const updated = await folderApi.apiPatchFolder(id, patch);
+      set((state) => ({
+        folders: state.folders.map((f) => (f.id === id ? updated : f))
+      }));
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to save project") });
+    }
+  },
+
+  addFolderSource: async (folderId, filename, mimeType, dataBase64) => {
+    set({ error: null });
+    try {
+      const updated = await folderApi.apiAddFolderSource(folderId, filename, mimeType, dataBase64);
+      set((state) => ({
+        folders: state.folders.map((f) => (f.id === folderId ? updated : f))
+      }));
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to add project file") });
+    }
+  },
+
+  removeFolderSource: async (folderId, sourceId) => {
+    set({ error: null });
+    try {
+      const updated = await folderApi.apiRemoveFolderSource(folderId, sourceId);
+      set((state) => ({
+        folders: state.folders.map((f) => (f.id === folderId ? updated : f))
+      }));
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to remove project file") });
+    }
+  },
+
+  createFolder: async (name) => {
+    set({ error: null });
+    try {
+      const folder = await folderApi.apiCreateFolder(name);
+      await get().loadFolders();
+      set({ selectedFolderId: folder.id, sidebarPanel: "projects" });
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to create project") });
+    }
+  },
+
+  deleteFolder: async (id) => {
+    set({ error: null });
+    try {
+      await folderApi.apiDeleteFolder(id);
+      if (get().selectedFolderId === id) {
+        set({ selectedFolderId: null });
+      }
+      await get().loadFolders();
+      await get().loadConversations();
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to delete project") });
+    }
+  },
+
+  pinConversation: async (id, pinned) => {
+    set({ error: null });
+    try {
+      await chatApi.apiPinConversation(id, pinned);
+      await get().loadConversations();
+    } catch (e) {
+      set({ error: errorMessage(e, pinned ? "Failed to pin chat" : "Failed to unpin chat") });
+    }
+  },
+
+  archiveConversation: async (id, archived) => {
+    set({ error: null });
+    try {
+      await chatApi.apiArchiveConversation(id, archived);
+      const wasActive = get().activeConversationId === id;
+      await get().loadConversations();
+      if (wasActive && archived) {
+        const summaries = get().summaries;
+        if (summaries.length > 0) {
+          await get().selectConversation(summaries[0].id);
+        } else {
+          set({ activeConversationId: null, activeConversation: null });
+        }
+      }
+    } catch (e) {
+      set({ error: errorMessage(e, archived ? "Failed to archive chat" : "Failed to restore chat") });
+    }
+  },
+
+  moveConversationToFolder: async (id, folderId) => {
+    set({ error: null });
+    try {
+      await chatApi.apiMoveToFolder(id, folderId);
+      await get().loadConversations();
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to move chat") });
+    }
+  },
+
+  burnActiveEphemeral: async () => {
+    const { activeConversationId, activeConversation } = get();
+    if (!activeConversationId || !activeConversation?.ephemeral) return;
+
+    set({ error: null });
+    try {
+      await chatApi.apiBurnEphemeralConversation(activeConversationId);
+      const summaries = get().summaries.filter((s) => s.id !== activeConversationId);
+      set({ summaries, activeConversationId: null, activeConversation: null });
+      if (summaries.length > 0) {
+        await get().selectConversation(summaries[0].id);
+      } else {
+        await get().createConversation();
+      }
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to burn temporary chat") });
+    }
+  },
+
   deleteConversation: async (id: string) => {
     set({ error: null });
     try {
       await chatApi.apiDeleteConversation(id);
-      const summaries = await chatApi.apiListConversations();
+      const summaries = await fetchSummariesForPanel(get().sidebarPanel);
       const wasActive = get().activeConversationId === id;
       set({ summaries });
       if (wasActive) {
@@ -287,7 +605,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const conversation = await chatApi.apiPatchConversation(id, patch);
       const summaries = get().searchQuery.trim()
         ? await chatApi.apiSearchConversations(get().searchQuery)
-        : await chatApi.apiListConversations();
+        : await fetchSummariesForPanel(get().sidebarPanel);
       set({
         activeConversation: conversation,
         summaries
@@ -308,7 +626,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const conversation = await chatApi.apiPatchConversation(id, { title: trimmed });
       const summaries = get().searchQuery.trim()
         ? await chatApi.apiSearchConversations(get().searchQuery)
-        : await chatApi.apiListConversations();
+        : await fetchSummariesForPanel(get().sidebarPanel);
       set((state) => ({
         summaries,
         activeConversation:
@@ -367,6 +685,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       streamingMessageId: null,
       toolActivity: [],
       error: null,
+      retryAfterMessageId: null,
+      editingMessageId: null,
       activeConversation: {
         ...activeConversation,
         messages: [...activeConversation.messages, optimisticUser]
@@ -377,12 +697,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const result = await chatApi.apiSendMessage(activeConversationId, trimmed, {
         ...(attachments?.length ? { attachments } : {})
       });
-      const summaries = await chatApi.apiListConversations();
+      const summaries = await fetchSummariesForPanel(get().sidebarPanel);
       set({
         activeConversation: result.conversation,
         sending: false,
         streamingMessageId: null,
         toolActivity: [],
+        retryAfterMessageId: null,
         summaries
       });
     } catch (e) {
@@ -391,19 +712,57 @@ export const useChatStore = create<ChatState>((set, get) => ({
         streamingMessageId: null,
         toolActivity: [],
         error: errorMessage(e, "Failed to send message"),
+        retryAfterMessageId: optimisticUserId,
         activeConversation: state.activeConversation
-          ? {
-              ...state.activeConversation,
-              messages: state.activeConversation.messages.filter(
-                (m) => m.id !== optimisticUserId
-              )
-            }
-          : null
       }));
     }
   },
 
-  regenerateLastResponse: async () => {
+  editMessage: async (messageId, content) => {
+    const { activeConversationId, activeConversation, sending } = get();
+    if (!activeConversationId || !activeConversation || sending) return;
+
+    const messageIdx = activeConversation.messages.findIndex((m) => m.id === messageId);
+    if (messageIdx < 0) return;
+
+    set({
+      sending: true,
+      streamingMessageId: null,
+      toolActivity: [],
+      error: null,
+      retryAfterMessageId: null,
+      editingMessageId: null,
+      activeConversation: {
+        ...activeConversation,
+        messages: activeConversation.messages
+          .map((m, idx) => (idx === messageIdx ? { ...m, content } : m))
+          .slice(0, messageIdx + 1)
+      }
+    });
+
+    try {
+      const result = await chatApi.apiEditMessage(activeConversationId, messageId, content);
+      const summaries = await fetchSummariesForPanel(get().sidebarPanel);
+      set({
+        activeConversation: result.conversation,
+        sending: false,
+        streamingMessageId: null,
+        toolActivity: [],
+        retryAfterMessageId: null,
+        summaries
+      });
+    } catch (e) {
+      set({
+        sending: false,
+        streamingMessageId: null,
+        toolActivity: [],
+        error: errorMessage(e, "Failed to edit message"),
+        retryAfterMessageId: messageId
+      });
+    }
+  },
+
+  retryMessage: async (messageId) => {
     const { activeConversationId, sending } = get();
     if (!activeConversationId || sending) return;
 
@@ -412,9 +771,55 @@ export const useChatStore = create<ChatState>((set, get) => ({
       streamingMessageId: null,
       toolActivity: [],
       error: null,
+      retryAfterMessageId: null
+    });
+
+    try {
+      const result = await chatApi.apiRetryMessage(activeConversationId, messageId);
+      const summaries = await fetchSummariesForPanel(get().sidebarPanel);
+      set({
+        activeConversation: result.conversation,
+        sending: false,
+        streamingMessageId: null,
+        toolActivity: [],
+        retryAfterMessageId: null,
+        summaries
+      });
+    } catch (e) {
+      const conv = get().activeConversation;
+      let retryId = messageId ?? null;
+      if (!retryId && conv) {
+        for (let i = conv.messages.length - 1; i >= 0; i -= 1) {
+          if (conv.messages[i].role === "user") {
+            retryId = conv.messages[i].id;
+            break;
+          }
+        }
+      }
+      set({
+        sending: false,
+        streamingMessageId: null,
+        toolActivity: [],
+        error: errorMessage(e, "Failed to retry"),
+        retryAfterMessageId: retryId
+      });
+    }
+  },
+
+  regenerateLastResponse: async (createBranch = false) => {
+    const { activeConversationId, sending } = get();
+    if (!activeConversationId || sending) return;
+
+    set({
+      sending: true,
+      streamingMessageId: null,
+      toolActivity: [],
+      error: null,
+      retryAfterMessageId: null,
+      editingMessageId: null,
       activeConversation: (() => {
         const conv = get().activeConversation;
-        if (!conv) return conv;
+        if (!conv || createBranch) return conv;
         let lastUserIdx = -1;
         for (let i = conv.messages.length - 1; i >= 0; i -= 1) {
           if (conv.messages[i].role === "user") {
@@ -431,22 +836,69 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     try {
-      const result = await chatApi.apiRegenerateLastResponse(activeConversationId);
-      const summaries = await chatApi.apiListConversations();
+      const result = await chatApi.apiRegenerateLastResponse(
+        activeConversationId,
+        createBranch
+      );
+      const summaries = await fetchSummariesForPanel(get().sidebarPanel);
       set({
         activeConversation: result.conversation,
         sending: false,
         streamingMessageId: null,
         toolActivity: [],
+        retryAfterMessageId: null,
         summaries
       });
     } catch (e) {
+      const conv = get().activeConversation;
+      let retryId: string | null = null;
+      if (conv) {
+        for (let i = conv.messages.length - 1; i >= 0; i -= 1) {
+          if (conv.messages[i].role === "user") {
+            retryId = conv.messages[i].id;
+            break;
+          }
+        }
+      }
       set({
         sending: false,
         streamingMessageId: null,
         toolActivity: [],
-        error: errorMessage(e, "Failed to regenerate response")
+        error: errorMessage(e, "Failed to regenerate response"),
+        retryAfterMessageId: retryId
       });
+    }
+  },
+
+  forkConversation: async (messageId) => {
+    const { activeConversationId } = get();
+    if (!activeConversationId) return;
+    try {
+      const forked = await chatApi.apiForkConversation(activeConversationId, messageId);
+      const summaries = await fetchSummariesForPanel(get().sidebarPanel);
+      set({
+        activeConversationId: forked.id,
+        activeConversation: forked,
+        summaries,
+        error: null
+      });
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to fork conversation") });
+    }
+  },
+
+  selectBranch: async (parentId, assistantId) => {
+    const { activeConversationId, activeConversation } = get();
+    if (!activeConversationId || !activeConversation) return;
+    const branchPicks = {
+      ...(activeConversation.branchPicks ?? {}),
+      [parentId]: assistantId
+    };
+    try {
+      const updated = await chatApi.apiPatchConversation(activeConversationId, { branchPicks });
+      set({ activeConversation: updated });
+    } catch (e) {
+      set({ error: errorMessage(e, "Failed to switch branch") });
     }
   },
 
@@ -471,9 +923,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const content = await chatApi.apiExportConversation(activeConversationId, format);
       const filename = conversationExportFilename(activeConversation.title, format);
-      const mimeType = format === "json" ? "application/json" : "text/markdown";
+      const mimeType =
+        format === "json"
+          ? "application/json"
+          : format === "html"
+            ? "text/html"
+            : "text/markdown";
       downloadTextFile(filename, content, mimeType);
       set({ exporting: false });
+      toast(`Exported ${format.toUpperCase()}`);
     } catch (e) {
       set({
         exporting: false,

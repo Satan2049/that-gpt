@@ -15,12 +15,35 @@ pub fn get_settings(state: State<'_, AppState>) -> SettingsView {
 }
 
 #[tauri::command]
-pub fn update_settings(
+pub async fn update_settings(
     state: State<'_, AppState>,
     body: UpdateSettingsBody,
 ) -> Result<SettingsView, String> {
+    let should_index = body.knowledge_base_enabled
+        && !body.knowledge_base_path.trim().is_empty();
+    let index_path = body.knowledge_base_path.trim().to_string();
+
     let config = state.update_settings(body).map_err(String::from)?;
+
+    if should_index {
+        let _ = crate::services::KnowledgeService::index_folder(
+            std::path::Path::new(&index_path),
+            &state.data_dir,
+            &state,
+        )
+        .await;
+    }
+
     Ok(SettingsView::from_config(&state.config_dir, &config))
+}
+
+#[tauri::command]
+pub fn get_usage_analytics(
+    state: State<'_, AppState>,
+    days: Option<u32>,
+) -> Result<Vec<crate::services::UsageDaySummary>, String> {
+    let days = days.unwrap_or(30).clamp(1, 365);
+    crate::services::UsageLogService::summarize(&state.data_dir, days).map_err(String::from)
 }
 
 #[tauri::command]

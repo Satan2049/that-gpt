@@ -3,7 +3,7 @@
 > **Goal:** Transform ChatNest v2 into **ThatGPT** — a local-first desktop chat client that looks and behaves like ChatGPT (desktop), but runs on OpenAI-compatible APIs / Ollama, with a humorous parody tone. No cloud account, no upgrade plan, no profile — settings replace billing.
 
 **Reference UI:** `docs/reference/` (ChatGPT desktop screenshots)  
-**Current codebase:** ChatNest v2.0.0 — Tauri 2 + Rust + React 18 + Zustand + JSON storage  
+**Current codebase:** ThatGPT v2.5.0 — Tauri 2 + Rust + React 18 + Zustand + JSON storage  
 **Target platform:** Windows desktop first (like Cursor / Void)
 
 ---
@@ -170,7 +170,7 @@ Two-column modal (nav left, content right). Map ChatGPT categories to local equi
 
 **Outcome:** App says ThatGPT, looks like ChatGPT at a glance.
 
-- [ ] Rename product: ChatNest → ThatGPT (UI strings, `tauri.conf.json`, bundle id, README, icons)
+- [x] Rename product: ChatNest → ThatGPT (UI strings, `tauri.conf.json`, bundle id, README, icons)
 - [ ] New logo (chat bubble + T) — SVG + app icons
 - [ ] New design tokens matching ChatGPT dark/light (near-black `#0d0d0d`, subtle borders, pill composer)
 - [ ] Restructure `DesktopShell` to ChatGPT layout:

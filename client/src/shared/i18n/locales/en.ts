@@ -1,0 +1,173 @@
+import type { Translations } from "../types";
+
+export const en: Translations = {
+  nav: {
+    newChat: "New chat",
+    searchChats: "Search chats",
+    library: "Library",
+    projects: "Projects",
+    more: "More",
+    temporaryChat: "Temporary chat",
+    archivedChats: "Archived chats",
+    promptPresets: "Prompt presets",
+    recents: "Recents",
+    archived: "Archived",
+    attachmentsHint: "Attachments open in the main panel."
+  },
+  footer: {
+    connected: "Connected",
+    setupRequired: "Setup required",
+    settingsApi: "Settings & API keys"
+  },
+  chat: {
+    emptyTitle: "Go on, bother a local model.",
+    emptySub: "Ask anything — it runs on your hardware.",
+    noBookmarks: "No bookmarked messages in this chat.",
+    responding: "Assistant is responding…",
+    bookmarks: "Bookmarks",
+    bookmarked: "Bookmarked",
+    showAll: "Show all",
+    newMessages: "New messages",
+    askAnything: "Ask anything",
+    selectConversation: "Select or create a conversation",
+    stopGenerating: "Stop generating",
+    sendMessage: "Send message",
+    uploadImage: "Upload image",
+    temporary: "Temporary",
+    burnIt: "Burn it",
+    ephemeralHint: "This chat is not saved to disk"
+  },
+  suggestions: [
+    "Explain how a neural network learns",
+    "Write a short poem about rain",
+    "Debug this regex for email validation",
+    "Generate an image of a cozy cabin at dusk"
+  ],
+  messageActions: {
+    copy: "Copy",
+    share: "Share",
+    regenerate: "Regenerate",
+    more: "More",
+    alternateReply: "Save as alternate reply",
+    edit: "Edit",
+    fork: "Fork from here",
+    forkConversation: "Fork conversation here",
+    copied: "Copied",
+    copiedForSharing: "Copied for sharing",
+    bookmark: "Bookmark message",
+    removeBookmark: "Remove bookmark"
+  },
+  header: {
+    moreActions: "More actions",
+    exportMarkdown: "Export Markdown",
+    copyMarkdown: "Copy as Markdown",
+    exportJson: "Export JSON",
+    shareHtml: "Share as HTML",
+    viewApiPrompt: "View API prompt",
+    settings: "Settings"
+  },
+  shell: {
+    collapseSidebar: "Collapse sidebar",
+    expandSidebar: "Open sidebar",
+    closeMenu: "Close menu",
+    openMenu: "Open menu",
+    resizeSidebar: "Resize sidebar",
+    closeSidebar: "Close sidebar"
+  },
+  projects: {
+    title: "Projects",
+    newProject: "New project",
+    noProjects: "No projects yet.",
+    notFound: "Project not found.",
+    settings: "Settings",
+    projectMenu: "Project menu",
+    projectSettings: "Project settings",
+    newChatIn: "New chat in",
+    chats: "Chats",
+    sources: "Sources",
+    noChats: "No chats yet",
+    noChatsSub: "Chats in this project will live here.",
+    noSources: "No sources yet",
+    dropFiles: "Drop files here or click to upload",
+    uploading: "Uploading…",
+    removeSource: "Remove",
+    addFilesHint: "Add files — PDF, TXT, MD, DOCX",
+    sourcesContextHint: "Included in the project context when you chat here.",
+    deleteTitle: "Delete project?",
+    deleteMessage: 'Delete "{name}"? Chats will be unassigned.'
+  },
+  projectSettings: {
+    title: "Project settings",
+    projectName: "Project name",
+    instructions: "Instructions",
+    instructionsHint: "Set context and customize how the model responds in this project.",
+    instructionsPlaceholder:
+      "e.g. Respond in Persian. Reference uploaded docs. Keep answers short.",
+    deleteProject: "Delete project",
+    deleteConfirm: "Delete this project? Chats will be kept but unassigned.",
+    save: "Save",
+    cancel: "Cancel",
+    close: "Close",
+    saving: "Saving…"
+  },
+  settings: {
+    title: "Settings",
+    close: "Close",
+    general: "General",
+    personalization: "Personalization",
+    providers: "Providers & Models",
+    data: "Data controls",
+    storage: "Storage",
+    keyboard: "Keyboard",
+    appearance: "Appearance",
+    light: "Light",
+    dark: "Dark",
+    language: "Language",
+    languageHint: "Changes the app interface. Chat text direction follows each message automatically.",
+    english: "English",
+    persian: "Persian (فارسی)",
+    generalHint: "ThatGPT runs locally on your machine. No cloud account required.",
+    save: "Save",
+    saved: "Saved",
+    advanced: "Advanced"
+  },
+  onboarding: {
+    welcomeTitle: "Welcome to ThatGPT",
+    welcomeBody:
+      "Your local AI chat — private, fast, and fully on your machine. Let's set things up in a few steps.",
+    languageTitle: "Choose your language",
+    languageBody: "Pick the interface language. Messages auto-align for Persian and English.",
+    tipsTitle: "Quick tour",
+    tipNewChat: "New chat — start a conversation from the sidebar.",
+    tipProjects: "Projects — group chats with custom instructions and files.",
+    tipSettings: "Settings — add your API key to connect a model provider.",
+    back: "Back",
+    next: "Next",
+    getStarted: "Get started",
+    skip: "Skip"
+  },
+  common: {
+    close: "Close",
+    delete: "Delete"
+  },
+  conversation: {
+    pinned: "Pinned",
+    noArchived: "No archived chats.",
+    noMatches: "No matches.",
+    noConversations: "No conversations yet.",
+    deleteTitle: "Delete conversation?",
+    deleteMessage: 'Delete "{name}"? This cannot be undone.',
+    share: "Share",
+    rename: "Rename",
+    moveToProject: "Move to project",
+    removeFromProject: "Remove from project",
+    pinChat: "Pin chat",
+    unpinChat: "Unpin chat",
+    archive: "Archive",
+    restore: "Restore",
+    delete: "Delete",
+    moreOptions: "Chat options",
+    pin: "Pin",
+    unpin: "Unpin"
+  }
+};

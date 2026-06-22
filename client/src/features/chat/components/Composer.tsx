@@ -15,9 +15,20 @@ import {
   MAX_ATTACHMENTS_PER_MESSAGE,
   maxBytesForMime
 } from "../lib/attachmentLimits";
+import { requestOpenModelSelector } from "../lib/modelUtils";
+import {
+  filterSlashCommands,
+  resolveSlashCommand,
+  SLASH_COMMANDS,
+  type SlashCommand
+} from "../lib/slashCommands";
+import { SlashCommandMenu } from "./SlashCommandMenu";
 import { useImageLimits } from "../../settings/store/settingsStore";
+import { usePromptStore } from "../../prompt/store/promptStore";
 import { readFileAsBase64Data } from "../lib/readFileAttachment";
 import { useChatStore } from "../store/chatStore";
+import { useTranslation } from "../../../shared/i18n/useTranslation";
+import { autoDirProps } from "../../../shared/i18n/textDirection";
 
 type PendingAttachment = {
   key: string;
@@ -28,6 +39,7 @@ type PendingAttachment = {
 
 export type ComposerHandle = {
   focus: () => void;
+  setDraft: (text: string) => void;
 };
 
 const TEXTAREA_MIN_HEIGHT_PX = 24;
@@ -36,6 +48,7 @@ const TEXTAREA_MAX_HEIGHT_PX = 200;
 const DRAFT_PREFIX = "thatgpt:draft:";
 
 export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref) {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const attachMenuRef = useRef<HTMLDetailsElement>(null);
@@ -44,17 +57,26 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
   const [pending, setPending] = useState<PendingAttachment[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
+  const [slashIndex, setSlashIndex] = useState(0);
 
   const activeId = useChatStore((s) => s.activeConversationId);
   const sending = useChatStore((s) => s.sending);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const stopGeneration = useChatStore((s) => s.stopGeneration);
+  const createConversation = useChatStore((s) => s.createConversation);
+  const exportActiveConversation = useChatStore((s) => s.exportActiveConversation);
+  const patchConversation = useChatStore((s) => s.patchConversation);
+  const presets = usePromptStore((s) => s.presets);
   const { maxCount: maxAttachments } = useImageLimits();
 
   pendingRef.current = pending;
 
   useImperativeHandle(ref, () => ({
-    focus: () => textareaRef.current?.focus()
+    focus: () => textareaRef.current?.focus(),
+    setDraft: (value: string) => {
+      setText(value);
+      textareaRef.current?.focus();
+    }
   }));
 
   useEffect(() => {
@@ -100,6 +122,84 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
     !sending &&
     !preparing &&
     (text.trim().length > 0 || pending.length > 0);
+
+  const slashQuery = text.trimStart();
+  const slashSuggestions: SlashCommand[] = (() => {
+    if (!slashQuery.startsWith("/")) return [];
+    const promptMatch = /^\/prompt(?:\s+(.*))?$/i.exec(slashQuery);
+    if (promptMatch) {
+      const q = (promptMatch[1] ?? "").trim().toLowerCase();
+      return presets
+        .filter((p) => !q || p.name.toLowerCase().includes(q))
+        .slice(0, 8)
+        .map((p) => ({
+          name: `/prompt ${p.name}`,
+          description: p.systemPrompt.slice(0, 80)
+        }));
+    }
+    return filterSlashCommands(slashQuery);
+  })();
+  const slashMode = slashSuggestions.length > 0 && slashQuery.startsWith("/");
+
+  useEffect(() => {
+    setSlashIndex(0);
+  }, [text]);
+
+  const runSlashCommand = async (command: SlashCommand) => {
+    const trimmed = text.trim();
+    const presetMatch = /^\/prompt\s+(.+)$/i.exec(trimmed);
+
+    if (presetMatch) {
+      const presetName = presetMatch[1].trim().toLowerCase();
+      const preset = presets.find((p) => p.name.toLowerCase() === presetName);
+      if (preset) {
+        await patchConversation({ promptPresetId: preset.id });
+      }
+      setText("");
+      return;
+    }
+
+    const resolved = resolveSlashCommand(trimmed.split(/\s/)[0] ?? "");
+    const cmd = resolved ?? command;
+
+    switch (cmd.name) {
+      case "/new":
+        await createConversation();
+        setText("");
+        break;
+      case "/clear":
+        setText("");
+        setPending((prev) => {
+          prev.forEach((p) => {
+            if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+          });
+          return [];
+        });
+        break;
+      case "/model":
+        requestOpenModelSelector();
+        setText("");
+        break;
+      case "/export":
+        await exportActiveConversation("markdown");
+        setText("");
+        break;
+      case "/temp":
+        await createConversation({ ephemeral: true });
+        setText("");
+        break;
+      case "/help":
+        setText(
+          SLASH_COMMANDS.map((c) => `${c.name} — ${c.description}`).join("\n")
+        );
+        break;
+      case "/prompt":
+        setText("/prompt ");
+        break;
+      default:
+        break;
+    }
+  };
 
   const removePending = (key: string) => {
     setPending((prev) => {
@@ -154,6 +254,14 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
   };
 
   const submitMessage = async () => {
+    if (slashMode) {
+      const cmd = slashSuggestions[slashIndex] ?? slashSuggestions[0];
+      if (cmd) {
+        await runSlashCommand(cmd);
+      }
+      return;
+    }
+
     if (!canSubmit || !activeId) return;
 
     const trimmed = text.trim();
@@ -191,9 +299,30 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (slashMode) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSlashIndex((i) => Math.min(i + 1, slashSuggestions.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSlashIndex((i) => Math.max(i - 1, 0));
+        return;
+      }
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const cmd = slashSuggestions[slashIndex];
+        if (cmd) setText(`${cmd.name} `);
+        return;
+      }
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      void submitMessage();
+      if (slashMode || canSubmit) {
+        void submitMessage();
+      }
     }
   };
 
@@ -275,10 +404,18 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
               onClick={() => openFilePicker("image/jpeg,image/png,image/webp,image/gif")}
               disabled={disabled}
             >
-              Upload image
+              {t.chat.uploadImage}
             </button>
           </div>
         </details>
+
+        {slashMode ? (
+          <SlashCommandMenu
+            commands={slashSuggestions}
+            activeIndex={slashIndex}
+            onSelect={(cmd) => void runSlashCommand(cmd)}
+          />
+        ) : null}
 
         <textarea
           ref={textareaRef}
@@ -293,17 +430,18 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
               addFiles(files);
             }
           }}
-          placeholder={activeId ? "Ask anything" : "Select or create a conversation"}
+          placeholder={activeId ? t.chat.askAnything : t.chat.selectConversation}
           disabled={disabled}
           autoComplete="off"
           rows={1}
+          {...autoDirProps}
         />
 
         {sending ? (
           <button
             type="button"
             className="composer-send-btn composer-stop-btn"
-            aria-label="Stop generating"
+            aria-label={t.chat.stopGenerating}
             onClick={() => void stopGeneration()}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -315,7 +453,7 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
             type="submit"
             className="composer-send-btn"
             disabled={!canSubmit}
-            aria-label="Send message"
+            aria-label={t.chat.sendMessage}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />

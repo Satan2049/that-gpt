@@ -1,4 +1,9 @@
 pub mod chat;
+pub mod folder;
 pub mod health;
+pub mod library;
+pub mod pricing;
 pub mod prompt;
+pub mod provider;
 pub mod settings;
+pub mod template;

@@ -31,12 +31,12 @@ Commit or attach `SHA256.txt` to the GitHub Release alongside the binaries.
 
 ### Verify on Windows (PowerShell)
 
-1. Download the release file (for example `ThatGPT-2.2.0-windows-x64-portable.exe`).
+1. Download the release file (for example `ThatGPT-2.5.0-windows-x64-portable.exe`).
 2. Download `SHA256.txt` from the same release.
 3. Compute the hash:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 .\ThatGPT-2.2.0-windows-x64-portable.exe
+Get-FileHash -Algorithm SHA256 .\ThatGPT-2.5.0-windows-x64-portable.exe
 ```
 
 4. Compare the `Hash` value with the matching line in `SHA256.txt` (case-insensitive).
@@ -61,6 +61,23 @@ After each release build, update **all three**:
 | **GitHub Release body** | Markdown block with both VT URLs (see below) |
 | **`docs/RELEASE_vX.Y.Z.md`** | Same table as TRUST.md for that version |
 
+### Published reports (v2.5.0)
+
+_Add VirusTotal links after building and uploading release binaries._
+
+| File | VirusTotal |
+|------|------------|
+| NSIS setup EXE | *TBD* |
+| Portable EXE | *TBD* |
+
+```markdown
+## VirusTotal reports (v2.5.0)
+- NSIS installer: <paste URL after upload>
+- Portable EXE: <paste URL after upload>
+
+Verify checksums: https://github.com/Satan2049/that-gpt/blob/main/SHA256.txt
+```
+
 ### Published reports (v2.2.0)
 
 | File | VirusTotal |
@@ -76,9 +93,9 @@ After each release build, update **all three**:
 Verify checksums: https://github.com/Satan2049/that-gpt/blob/main/SHA256.txt
 ```
 
-### Published reports (v2.0.0 — ChatNest)
+### Published reports (v2.0.0 — pre-ThatGPT)
 
-Historical scans from the prior product name. Hashes refer to ChatNest v2.0.0 builds.
+Historical scans from before the v2.2.0 rebrand. Hashes refer to v2.0.0 builds.
 
 | File | SHA256 | VirusTotal |
 |------|--------|------------|

@@ -1,12 +1,14 @@
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { create } from "zustand";
 import type { AppSettings, UpdateSettingsInput } from "../types/settings.types";
+import type { ModelInfo } from "../types/models.types";
 import * as settingsApi from "../services/settingsApi";
 import type { ConnectionTestResult } from "../services/settingsApi";
 
 type SettingsState = {
   settings: AppSettings | null;
   models: string[];
+  modelInfos: ModelInfo[];
   loading: boolean;
   saving: boolean;
   modelsLoading: boolean;
@@ -24,6 +26,7 @@ type SettingsState = {
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: null,
   models: [],
+  modelInfos: [],
   loading: false,
   saving: false,
   modelsLoading: false,
@@ -66,7 +69,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ modelsLoading: true, error: null });
     try {
       const result = await settingsApi.apiListModels();
-      set({ models: result.models, modelsLoading: false });
+      set({ models: result.models, modelInfos: result.modelInfos ?? [], modelsLoading: false });
     } catch (e) {
       set({
         modelsLoading: false,

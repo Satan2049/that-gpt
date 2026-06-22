@@ -50,7 +50,7 @@
           <button type="button" class="btn btn-ghost" id="theme-toggle" aria-label="Toggle color theme">
             Dark mode
           </button>
-          <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0">Download v2.0.0</a>
+          <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.5.0">Download v2.5.0</a>
         </div>
       </header>
 
@@ -58,26 +58,26 @@
         <section id="overview" class="hero-grid">
           <article class="panel hero-copy">
             <div class="eyebrow">
-              <span class="pill pill-accent">v2.0.0</span>
+              <span class="pill pill-accent">v2.5.0</span>
               <span class="pill">OpenAI-compatible</span>
               <span class="pill">Windows</span>
               <span class="pill">MIT</span>
             </div>
             <p class="section-title">Product overview</p>
-            <h1>Desktop chat, redesigned — credentials stay in Rust</h1>
+            <h1>ChatGPT-style desktop chat — credentials stay in Rust</h1>
             <p class="hero-lead">
-              ThatGPT pairs a ChatGPT-inspired React UI with a Rust + Tauri backend. Markdown replies,
-              agent tooling, multimodal attachments, and a responsive drawer layout — while
-              conversations and presets persist as JSON on disk.
+              ThatGPT pairs a ChatGPT-inspired React UI with a Rust + Tauri backend. Multi-provider
+              support (OpenAI-compatible + Ollama), agent tools, local RAG, image generation, branching,
+              and a full conversation library — while data persists as JSON on disk.
             </p>
             <div class="hero-cta">
-              <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0">Download v2.0.0</a>
+              <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.5.0">Download v2.5.0</a>
               <a class="btn" href="https://github.com/Satan2049/that-gpt">GitHub</a>
             </div>
           </article>
           <figure class="panel hero-preview">
             <img
-              src="https://raw.githubusercontent.com/Satan2049/that-gpt/main/assets/screenshots/screenshot-chat.png"
+              src="./screenshots/screenshot-chat.png"
               alt="ThatGPT chat interface"
               width="640"
               height="360"
@@ -104,39 +104,39 @@
 
         <section id="capabilities" class="section-block">
           <p class="section-title">Capabilities</p>
-          <h2 class="section-heading">What’s new in v2</h2>
+          <h2 class="section-heading">What’s in v2.5</h2>
           <div class="features">
             <article class="panel feature">
-              <h3>Markdown &amp; code</h3>
-              <p>GFM rendering with syntax highlighting. Copy full messages or individual code blocks.</p>
+              <h3>Providers &amp; models</h3>
+              <p>OpenAI-compatible profiles, Ollama, header model picker with capability badges.</p>
             </article>
             <article class="panel feature">
-              <h3>Agent workflow</h3>
-              <p>Tool-calling loop, stop in-flight streams, and regenerate the last assistant reply.</p>
+              <h3>Agent tools</h3>
+              <p>Web search, knowledge base RAG, vision, audio, and image generation via tool calls.</p>
             </article>
             <article class="panel feature">
-              <h3>Multimodal input</h3>
-              <p>Images, audio, text files, and PDFs with optional vision and transcription models.</p>
+              <h3>Markdown &amp; math</h3>
+              <p>GFM, syntax highlighting, LaTeX (KaTeX), and Mermaid diagrams.</p>
             </article>
             <article class="panel feature">
-              <h3>Responsive shell</h3>
-              <p>Drawer navigation on narrow windows; full sidebar layout on desktop widths.</p>
-            </article>
-            <article class="panel feature">
-              <h3>Design refresh</h3>
-              <p>Design tokens, Inter typography, elevated composer, and polished dark mode.</p>
+              <h3>Library &amp; RAG</h3>
+              <p>Attachment library, local knowledge folder, embeddings, citation footnotes.</p>
             </article>
             <article class="panel feature">
               <h3>Conversation tools</h3>
-              <p>Rename threads, debounced sidebar search, export Markdown or JSON.</p>
+              <p>Ctrl+K search, pin, archive, folders, ephemeral chat, export Markdown/JSON/HTML.</p>
             </article>
             <article class="panel feature">
-              <h3>Prompt presets</h3>
-              <p>Reusable system prompts with model and temperature per conversation.</p>
+              <h3>Power user</h3>
+              <p>Branching, fork, templates, bookmarks, command palette, usage analytics.</p>
             </article>
             <article class="panel feature">
-              <h3>In-app settings</h3>
-              <p>API key, base URL, models, timeout, and retries — no manual file editing required.</p>
+              <h3>Tokens &amp; cost</h3>
+              <p>Live token footer, context bar, editable per-model price estimates.</p>
+            </article>
+            <article class="panel feature">
+              <h3>ChatGPT-like shell</h3>
+              <p>Sidebar nav, pill composer, suggestion chips, skeleton loaders, j/k navigation.</p>
             </article>
             <article class="panel feature">
               <h3>Native desktop</h3>
@@ -174,11 +174,11 @@
 
         <section id="download" class="section-block">
           <p class="section-title">Download</p>
-          <h2 class="section-heading">Windows x64 — v2.0.0</h2>
+          <h2 class="section-heading">Windows x64 — v2.5.0</h2>
           <div class="panel" style="padding: 1.25rem">
             <p style="margin-top: 0">
               Pre-built binaries on
-              <a href="https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0">GitHub Releases v2.0.0</a>:
+              <a href="https://github.com/Satan2049/that-gpt/releases/tag/v2.5.0">GitHub Releases v2.5.0</a>:
               portable <code>.exe</code> or NSIS setup installer.
             </p>
             <p>
@@ -187,10 +187,10 @@
             </p>
             <p>
               Full release notes:
-              <a href="https://github.com/Satan2049/that-gpt/blob/main/docs/RELEASE_v2.0.0.md">RELEASE_v2.0.0.md</a>
+              <a href="./RELEASE_v2.5.0.md">RELEASE_v2.5.0.md</a>
             </p>
             <div class="hero-cta" style="margin-top: 1rem">
-              <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.0.0">Get ThatGPT</a>
+              <a class="btn btn-primary" href="https://github.com/Satan2049/that-gpt/releases/tag/v2.5.0">Get ThatGPT</a>
               <a class="btn" href="./TRUST.md">Trust &amp; verification</a>
             </div>
           </div>
@@ -198,29 +198,18 @@
 
         <section id="trust" class="section-block">
           <p class="section-title">Trust</p>
-          <h2 class="section-heading">VirusTotal reports (v2.0.0)</h2>
+          <h2 class="section-heading">VirusTotal reports (v2.5.0)</h2>
           <p class="hero-lead" style="max-width: 720px">
-            Independent scans for the published Windows builds. Two heuristic engines (SecureAge, Trapmine)
-            may flag new unsigned binaries — see
+            After each release, maintainers upload portable and NSIS binaries to VirusTotal and publish links in
+            <a href="./TRUST.md#published-reports-v250">TRUST.md</a>. New unsigned Tauri builds may get heuristic
+            flags until they build reputation — see
             <a href="./TRUST.md#interpreting-results">interpreting results</a>.
           </p>
-          <div class="features" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))">
-            <article class="panel feature">
-              <h3>Portable EXE</h3>
-              <p>
-                <a href="https://www.virustotal.com/gui/file/752ab6ebc466319fad186549fdb9a1a23c155f38dd6ade6bf07846b1886c3d74?nocache=1">View VirusTotal report</a>
-              </p>
-              <p>Trapmine — <code>Malicious.moderate.ml.score</code> (heuristic)</p>
-              <p><code style="word-break: break-all">SHA256: 752ab6eb…c3d74</code></p>
-            </article>
-            <article class="panel feature">
-              <h3>NSIS setup EXE</h3>
-              <p>
-                <a href="https://www.virustotal.com/gui/file/b5bacd8762a769ba8456ea96ee227d0d18875a202ab061b4fb10745990e4552f?nocache=1">View VirusTotal report</a>
-              </p>
-              <p>SecureAge — <code>Malicious</code> (heuristic)</p>
-              <p><code style="word-break: break-all">SHA256: b5bacd87…e4552f</code></p>
-            </article>
+          <div class="panel" style="padding: 1.25rem">
+            <p style="margin: 0">
+              VirusTotal URLs for v2.5.0 are added when the release build is published.
+              See <a href="./RELEASE_v2.5.0.md">RELEASE_v2.5.0.md</a> for the release checklist.
+            </p>
           </div>
         </section>
 
@@ -233,7 +222,7 @@
                 <span class="step-num">Option A</span>
                 <span class="step-title">Download a release</span>
               </div>
-              <pre><code># GitHub Releases v2.0.0 → portable .exe or setup installer
+              <pre><code># GitHub Releases v2.5.0 → portable .exe or setup installer
 # Verify SHA256.txt from the same release</code></pre>
             </li>
             <li class="panel step">
@@ -273,7 +262,7 @@ npm run clean   # remove build artifacts when needed</code></pre>
       </main>
 
       <footer class="site-footer">
-        <span>MIT License · ThatGPT v2.0.0 · Rust + Tauri 2</span>
+        <span>MIT License · ThatGPT v2.5.0 · Rust + Tauri 2</span>
         <span>
           <a href="https://github.com/Satan2049/that-gpt">GitHub</a>
           ·

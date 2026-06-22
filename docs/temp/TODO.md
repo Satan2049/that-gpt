@@ -69,14 +69,14 @@ Check boxes as work completes. Phases are ordered — finish Phase 0 before heav
 
 ---
 
-## Phase 1 — Core Chat Parity
+## Phase 1 — Core Chat Parity ✅
 
 ### Streaming (critical)
 
 - [x] Switch `send_message` in `src-tauri/src/services/chat.rs` to `create_chat_completion_stream`
 - [x] Remove `emit_content_chunks` simulation (or keep as fallback)
 - [x] Handle SSE parse errors gracefully
-- [ ] Verify cancel token aborts stream mid-flight
+- [x] Verify cancel token aborts stream mid-flight
 - [x] Frontend: handle partial chunks without flicker
 
 ### Scroll behavior
@@ -88,15 +88,15 @@ Check boxes as work completes. Phases are ordered — finish Phase 0 before heav
 ### Message actions
 
 - [x] Hover-reveal action bar on messages (copy, regenerate, edit)
-- [ ] Edit user message — inline textarea → save → truncate after → resend
-- [ ] Retry button on failed assistant messages (error status)
-- [ ] Backend: `edit_message` / `retry_message` commands
+- [x] Edit user message — inline textarea → save → truncate after → resend
+- [x] Retry button on failed assistant messages (error status)
+- [x] Backend: `edit_message` / `retry_message` commands
 
 ### Rich rendering
 
 - [x] Add `remark-math` + `rehype-katex` + KaTeX CSS to `MessageMarkdown.tsx`
 - [x] Add Mermaid rendering (lazy load mermaid on code fence `mermaid`)
-- [ ] Test: tables, task lists, math, diagrams in dark/light
+- [x] Test: tables, task lists, math, diagrams in dark/light
 
 ### Composer input
 
@@ -110,13 +110,13 @@ Check boxes as work completes. Phases are ordered — finish Phase 0 before heav
 
 - [x] Toast component (`client/src/shared/components/Toast.tsx`) — copy, save, errors
 - [x] Message fade-in animation (respect `prefers-reduced-motion`)
-- [x] Empty chat state centered like ChatGPT (logo + suggestion chips optional)
+- [x] Empty chat state centered like ChatGPT (logo + suggestion chips)
 
 ### Phase 1 exit criteria
 
 - [x] Smart scroll, LaTeX, mermaid, drag-drop image work
-- [ ] Edit message + retry on failed responses
-- [ ] No regressions on attachments / tools / regenerate / stop
+- [x] Edit message + retry on failed responses
+- [x] No regressions on attachments / tools / regenerate / stop
 
 ---
 
@@ -124,168 +124,171 @@ Check boxes as work completes. Phases are ordered — finish Phase 0 before heav
 
 ### Data model (backend)
 
-- [ ] Extend `Conversation` in `src-tauri/src/models/chat.rs`: `pinned`, `archived`, `folder_id`, `tags`, `ephemeral`
-- [ ] Migration for existing JSON conversations (default false/empty)
-- [ ] Commands: `pin_conversation`, `archive_conversation`, `move_to_folder`, `tag_conversation`
+- [x] Extend `Conversation` in `src-tauri/src/models/chat.rs`: `pinned`, `archived`, `folder_id`, `tags`, `ephemeral`
+- [x] Migration for existing JSON conversations (default false/empty)
+- [x] Commands: `pin_conversation`, `archive_conversation`, `move_to_folder`, `tag_conversation`
 
 ### Sidebar UX
 
-- [ ] Pinned section above Recents
-- [ ] Archive view (nav or More menu)
-- [ ] Double-click to rename conversation
-- [ ] Right-click context menu: pin, archive, rename, delete, export
+- [x] Pinned section above Recents
+- [x] Archive view (nav or More menu)
+- [x] Double-click to rename conversation
+- [x] Right-click context menu: pin, archive, rename, delete, export
 
 ### Search modal (Ctrl+K)
 
-- [ ] Create `client/src/shell/SearchModal.tsx`
-- [ ] Global shortcut Ctrl+K / Cmd+K
-- [ ] Group results: Today, Yesterday, Previous 7 days, Older
-- [ ] Arrow keys + Enter to open conversation
-- [ ] "New chat" action inside modal
+- [x] Create `client/src/shell/SearchModal.tsx`
+- [x] Global shortcut Ctrl+K / Cmd+K
+- [x] Group results: Today, Yesterday, Previous 7 days, Older
+- [x] Arrow keys + Enter to open conversation
+- [x] "New chat" action inside modal
 
 ### Folders / Projects
 
-- [ ] Create `client/src/features/folders/` — folder CRUD UI
-- [ ] `Projects` nav opens folder list view (reference: `Projects.png`)
-- [ ] Assign conversation to folder (dropdown or drag)
+- [x] Create `client/src/features/folders/` — folder CRUD UI
+- [x] `Projects` nav opens folder list view (reference: `Projects.png`)
+- [x] Assign conversation to folder (dropdown or drag)
 
 ### Ephemeral chat
 
-- [ ] `Temporary chat` mode — `ephemeral: true` skips JSON persistence
-- [ ] Header toggle + empty state (reference: `Home-TemporayChat.png`)
-- [ ] Clear on close or manual "burn it" action (parody copy)
+- [x] `Temporary chat` mode — `ephemeral: true` skips JSON persistence
+- [x] Header toggle + empty state (reference: `Home-TemporayChat.png`)
+- [x] Clear on close or manual "burn it" action (parody copy)
 
 ### Sidebar persistence
 
-- [ ] Remember collapsed/expanded in localStorage
-- [ ] Draggable sidebar resize handle (220–360px)
+- [x] Remember collapsed/expanded in localStorage
+- [x] Draggable sidebar resize handle (220–360px)
 
 ### Phase 2 exit criteria
 
-- [ ] Ctrl+K opens search modal with grouped results
-- [ ] Pin, archive, folders, ephemeral chat functional
-- [ ] Sidebar resize persists
+- [x] Ctrl+K opens search modal with grouped results
+- [x] Pin, archive, folders, ephemeral chat functional
+- [x] Sidebar resize persists
 
 ---
 
-## Phase 3 — Model & Input Experience
+## Phase 3 — Model & Input Experience ✅
 
 ### Providers
 
-- [ ] Settings → Providers tab: multiple provider profiles
-- [ ] Ollama provider — base URL `http://127.0.0.1:11434`, list models via `/api/tags`
-- [ ] Per-provider test connection button
-- [ ] Active provider selector
+- [x] Settings → Providers tab: multiple provider profiles
+- [x] Ollama provider — base URL `http://127.0.0.1:11434`, list models via `/api/tags`
+- [x] Per-provider test connection button
+- [x] Active provider selector
 
 ### Header model selector
 
-- [ ] `ModelSelector.tsx` in header — list models from active provider
-- [ ] Remember `last_model` per conversation
-- [ ] Capability badges (vision, tools, audio) on model rows
-- [ ] Advanced flyout: temperature, max tokens, system prompt override
+- [x] `ModelSelector.tsx` in header — list models from active provider
+- [x] Remember `last_model` per conversation
+- [x] Capability badges (reasoning, vision, tools) on model rows — auto-detected from model id
+- [x] Context window + max output token limits on model rows
+- [x] Advanced flyout: temperature, max tokens, system prompt override
 
 ### Token visibility
 
-- [ ] Parse `usage` from API responses
-- [ ] Show token count in header or composer footer (prompt / completion / total)
-- [ ] Rough context window bar (estimate input tokens vs model limit)
-- [ ] Memory control: "truncate history to last N messages" setting
+- [x] Parse `usage` from API responses
+- [x] Show token count in header or composer footer (prompt / completion / total)
+- [x] Rough context window bar (estimate input tokens vs model limit)
+- [x] Memory control: "truncate history to last N messages" setting
 
 ### Slash commands
 
-- [ ] Parse leading `/` in composer
-- [ ] Commands: `/new`, `/clear`, `/model`, `/export`, `/temp`, `/help`
-- [ ] Autocomplete dropdown for commands
+- [x] Parse leading `/` in composer
+- [x] Commands: `/new`, `/clear`, `/model`, `/export`, `/temp`, `/help`
+- [x] Autocomplete dropdown for commands
 
 ### Prompt templates
 
-- [ ] `/prompt` or `@preset` to insert preset system prompt
-- [ ] Keep existing preset CRUD — surface in Settings → Personalization
+- [x] `/prompt` or `@preset` to insert preset system prompt
+- [x] Keep existing preset CRUD — surface in Settings → Personalization
 
 ### Keyboard
 
-- [ ] Document all shortcuts in Settings → Keyboard
-- [ ] Ctrl+Shift+O new chat, Ctrl+K search, Enter send, Shift+Enter newline
-- [ ] Optional: Ctrl+Shift+; for settings
+- [x] Document all shortcuts in Settings → Keyboard
+- [x] Ctrl+Shift+O new chat, Ctrl+K search, Enter send, Shift+Enter newline
+- [x] Optional: Ctrl+Shift+; for settings
 
 ### Phase 3 exit criteria
 
-- [ ] Switch models from header without opening full settings
-- [ ] Ollama works out of the box when running locally
-- [ ] Token usage visible after each response
+- [x] Switch models from header without opening full settings
+- [x] Ollama works out of the box when running locally
+- [x] Token usage visible after each response
 
 ---
 
-## Phase 4 — Library & Knowledge
+## Phase 4 — Library & Knowledge ✅
 
 ### Library page
 
-- [ ] Create `client/src/features/library/` module
-- [ ] Nav → Library shows attachment table (reference: `Library.png`)
-- [ ] Filters: All / Images / Files
-- [ ] Columns: name, modified, size, source conversation
-- [ ] Backend: `index_attachments` command scanning data dir
+- [x] Create `client/src/features/library/` module
+- [x] Nav → Library shows attachment table (reference: `Library.png`)
+- [x] Filters: All / Images / Files
+- [x] Columns: name, modified, size, source conversation
+- [x] Backend: `index_attachments` command scanning data dir
 
 ### Document parsing
 
-- [ ] DOCX text extraction (Rust crate)
-- [ ] Improve PDF extraction beyond 4000 char preview cap (configurable)
+- [x] DOCX text extraction (Rust crate)
+- [x] Improve PDF extraction beyond 4000 char preview cap (configurable)
 
 ### RAG (feature-flagged)
 
-- [ ] Settings toggle: Enable local knowledge base
-- [ ] Project/workspace file folder picker
-- [ ] Chunking pipeline in Rust
-- [ ] Embeddings via Ollama `nomic-embed-text` or API
-- [ ] Vector store (sqlite-vec or lanceDB)
-- [ ] Retrieve top-k chunks on send
-- [ ] Citation markers in assistant markdown `[1]` linking to sources
+- [x] Settings toggle: Enable local knowledge base
+- [x] Project/workspace file folder picker (path field + re-index; native dialog deferred)
+- [x] Chunking pipeline in Rust
+- [x] Embeddings via Ollama `nomic-embed-text` or API (JSON index stores vectors; keyword fallback)
+- [x] Vector store MVP (embeddings in `data/knowledge/index.json` per chunk)
+- [x] Retrieve top-k chunks on send
+- [x] Citation markers in assistant markdown `[1]` linking to sources (clickable + footnotes)
 
 ### Phase 4 exit criteria
 
-- [ ] Library page lists all attachments
-- [ ] RAG behind feature flag works for at least PDF + txt
+- [x] Library page lists all attachments
+- [x] RAG behind feature flag works for at least PDF + txt
+- [x] Knowledge citations emitted to UI with source links
 
 ---
 
-## Phase 5 — Productivity & Power User
+## Phase 5 — Productivity & Power User ✅
 
-- [ ] Message bookmarking — star icon, filter view
-- [ ] Share conversation — generate standalone HTML export
-- [ ] Conversation templates — save thread as template
-- [ ] Message branching data model (`parent_id`, `branch_id`)
-- [ ] Fork conversation from any message
-- [ ] Branch picker UI when regenerating
-- [ ] Branch visualization (tree panel)
-- [ ] Side-by-side branch comparison view
-- [ ] Command palette — extend Ctrl+K with actions (toggle theme, open settings, switch model)
-- [ ] Raw prompt viewer (dev mode)
-- [ ] Tool call inspector — expandable JSON per tool round
-- [ ] Local usage analytics screen (tokens over time)
+- [x] Message bookmarking — star icon, filter view
+- [x] Share conversation — generate standalone HTML export
+- [x] Conversation templates — save thread as template (`> Save as template`)
+- [x] Message branching data model (`parent_id`, `branch_id`, `branch_picks`)
+- [x] Fork conversation from any message
+- [x] Branch picker UI when regenerating (numbered pills + “New branch”)
+- [x] Branch visualization (tree panel)
+- [x] Side-by-side branch comparison view (right-click two branches)
+- [x] Command palette — extend Ctrl+K with actions (type `>` for commands)
+- [x] Raw prompt viewer (dev mode in settings + header menu)
+- [x] Tool call inspector — expandable JSON per tool round
+- [x] Local usage analytics screen (tokens over time in Settings → Storage)
+- [x] LLM agent tools: `web_search` (DuckDuckGo) + `search_knowledge_base` when enabled
+- [x] Model badges: Embedding, Vision, Image Gen, Audio, Reasoning, Tools
 
 ---
 
 ## Phase 6 — Polish & Future
 
-- [ ] Skeleton loaders — conversation list, message list
-- [ ] Full keyboard navigation (j/k between messages)
+- [x] Skeleton loaders — conversation list, message list
+- [x] Full keyboard navigation (j/k between messages)
 - [ ] Voice input — push-to-talk, Whisper fallback
-- [ ] Cost tracking — editable price per model in settings
+- [x] Cost tracking — editable price per model in settings
 - [ ] Windows Credential Manager for API keys (Tauri plugin)
-- [ ] Desktop notifications on generation complete
-- [x] ~~Mobile shell refresh~~ — removed; Windows desktop only
-- [ ] Auto-update check (Tauri updater)
+- [x] Desktop notifications on generation complete (Web Notifications API)
+- [x] Auto-update check (GitHub releases API; full Tauri updater deferred)
 
 ---
 
-## Quick wins (can slot into any phase)
+## Quick wins (can slot into any phase) ✅
 
-- [ ] Replace `window.confirm` delete with styled confirm modal
-- [ ] Export menu from header overflow instead of `<details>`
-- [ ] Copy entire conversation as markdown (one click)
-- [ ] `prefers-reduced-motion` for all animations
-- [ ] Focus trap in modals (settings, search)
-- [ ] Add `aria-live` region for streaming content
+- [x] Replace `window.confirm` delete with styled confirm modal
+- [x] Export menu from header overflow instead of `<details>`
+- [x] Copy entire conversation as markdown (one click)
+- [x] `prefers-reduced-motion` for all animations
+- [x] Focus trap in modals (settings, search, confirm)
+- [x] Add `aria-live` region for streaming content
 
 ---
 
@@ -312,4 +315,4 @@ Check boxes as work completes. Phases are ordered — finish Phase 0 before heav
 
 ---
 
-*Last updated: 2026-06-20 — rebrand planning session*
+*Last updated: 2026-06-20 — v2.5.0 GitHub release prep*

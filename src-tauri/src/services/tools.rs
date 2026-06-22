@@ -5,18 +5,25 @@ use tauri::Emitter;
 use crate::config::AppState;
 use crate::error::AppError;
 use crate::models::ai::{user_content_for_api, ChatCompletionMessage, ToolCall};
-use crate::models::api::{ChatToolCallPayload, ChatToolResultPayload};
+use crate::models::api::{ChatGeneratedImagePayload, ChatToolCallPayload, ChatToolResultPayload};
+use crate::models::chat::ChatImageAttachment;
 use crate::models::{AttachmentKind, ChatAttachment, ChatMessage, Conversation, MessageRole};
+
+pub struct ToolExecutionOutcome {
+    pub messages: Vec<ChatMessage>,
+    pub generated_images: Vec<ChatImageAttachment>,
+}
 
 pub const MAX_TOOL_ROUNDS: usize = 8;
 
-pub fn tool_definitions() -> Vec<Value> {
-    vec![
+pub fn tool_definitions(state: &AppState) -> Vec<Value> {
+    let config = state.snapshot_config();
+    let mut defs = vec![
         json!({
             "type": "function",
             "function": {
                 "name": "analyze_image",
-                "description": "Analyze an image attachment using the vision/image model. Use for detailed visual inspection, OCR, or when the main model cannot see images.",
+                "description": "Analyze an image attachment using a vision model. Use for detailed visual inspection, OCR, or when the main model cannot see images.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -83,17 +90,90 @@ pub fn tool_definitions() -> Vec<Value> {
                 }
             }
         }),
-    ]
+    ];
+
+    if config.web_search_enabled {
+        defs.push(json!({
+            "type": "function",
+            "function": {
+                "name": "web_search",
+                "description": "Search the public web for current information, news, documentation, or facts not in the conversation. Use when the user asks about recent events or external facts.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Concise web search query"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        }));
+    }
+
+    if config.knowledge_base_enabled {
+        defs.push(json!({
+            "type": "function",
+            "function": {
+                "name": "search_knowledge_base",
+                "description": "Search the user's local indexed knowledge base (project docs, PDFs, notes). Use for questions about their files or workspace content.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "What to look up in the knowledge base"
+                        },
+                        "top_k": {
+                            "type": "integer",
+                            "description": "Number of excerpts to return (1-8, default 3)"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        }));
+    }
+
+    if !config.ai_image_model.trim().is_empty() {
+        defs.push(json!({
+            "type": "function",
+            "function": {
+                "name": "generate_image",
+                "description": "Create a new image from a text description using the configured image generation model (e.g. gpt-image-1, DALL·E, Flux). Use when the user asks you to draw, design, illustrate, or generate an image.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "prompt": {
+                            "type": "string",
+                            "description": "Detailed description of the image to generate"
+                        },
+                        "size": {
+                            "type": "string",
+                            "description": "Optional size: 1024x1024, 1792x1024, or 1024x1792",
+                            "enum": ["1024x1024", "1792x1024", "1024x1792"]
+                        }
+                    },
+                    "required": ["prompt"]
+                }
+            }
+        }));
+    }
+
+    defs
 }
 
 pub async fn execute_tool_calls(
     state: &AppState,
     app: &AppHandle,
     conversation_id: &str,
+    assistant_message_id: &str,
     conversation: &Conversation,
     calls: &[ToolCall],
-) -> Result<Vec<ChatMessage>, AppError> {
+) -> Result<ToolExecutionOutcome, AppError> {
     let mut results = Vec::new();
+    let mut generated_images = Vec::new();
     let now_base = chrono::Utc::now();
 
     for (idx, call) in calls.iter().enumerate() {
@@ -111,15 +191,38 @@ pub async fn execute_tool_calls(
             "analyze_image" => {
                 execute_analyze_image(state, conversation, &call.function.arguments).await
             }
-            "analyze_audio" => {
-                execute_analyze_audio(state, conversation, &call.function.arguments).await
+            "analyze_audio" => execute_analyze_audio(state, conversation, &call.function.arguments)
+                .await
+                .map(ToolCallOutput::Text),
+            "read_attachment" => execute_read_attachment(conversation, &call.function.arguments)
+                .map(ToolCallOutput::Text),
+            "web_search" => execute_web_search(&call.function.arguments)
+                .await
+                .map(ToolCallOutput::Text),
+            "search_knowledge_base" => execute_search_knowledge(state, &call.function.arguments)
+                .await
+                .map(ToolCallOutput::Text),
+            "generate_image" => {
+                execute_generate_image(state, &call.function.arguments).await
             }
-            "read_attachment" => execute_read_attachment(conversation, &call.function.arguments),
             other => Err(AppError::bad_request(format!("Unknown tool: {other}"))),
         };
 
-        let content = match result {
-            Ok(text) => text,
+        let content = match &result {
+            Ok(ToolCallOutput::Text(text)) => text.clone(),
+            Ok(ToolCallOutput::GeneratedImage { image, summary }) => {
+                generated_images.push(image.clone());
+                let _ = app.emit(
+                    "chat-generated-image",
+                    ChatGeneratedImagePayload {
+                        conversation_id: conversation_id.to_string(),
+                        message_id: assistant_message_id.to_string(),
+                        mime_type: image.mime_type.as_str().to_string(),
+                        base64: image.base64.clone(),
+                    },
+                );
+                summary.clone()
+            }
             Err(err) => format!("Error: {err}"),
         };
 
@@ -149,10 +252,24 @@ pub async fn execute_tool_calls(
             tool_calls: None,
             tool_call_id: Some(call.id.clone()),
             tool_name: Some(call.function.name.clone()),
+            bookmarked: false,
+            parent_id: None,
+            branch_id: String::new(),
         });
     }
 
-    Ok(results)
+    Ok(ToolExecutionOutcome {
+        messages: results,
+        generated_images,
+    })
+}
+
+enum ToolCallOutput {
+    Text(String),
+    GeneratedImage {
+        image: ChatImageAttachment,
+        summary: String,
+    },
 }
 
 fn find_readable_attachment(
@@ -224,7 +341,7 @@ async fn execute_analyze_image(
     state: &AppState,
     conversation: &Conversation,
     arguments_json: &str,
-) -> Result<String, AppError> {
+) -> Result<ToolCallOutput, AppError> {
     let args: Value = serde_json::from_str(arguments_json)
         .map_err(|_| AppError::bad_request("Invalid analyze_image arguments"))?;
 
@@ -242,15 +359,7 @@ async fn execute_analyze_image(
     let attachment =
         find_attachment(conversation, message_id, attachment_index, AttachmentKind::Image)?;
 
-    let config = state.snapshot_config();
-    let model = {
-        let image_model = config.ai_image_model.trim();
-        if !image_model.is_empty() {
-            image_model.to_string()
-        } else {
-            config.ai_model.clone()
-        }
-    };
+    let model = resolve_vision_model(state, conversation);
 
     let user_content = user_content_for_api(prompt, None, Some(std::slice::from_ref(&attachment)));
     let messages = vec![ChatCompletionMessage {
@@ -261,7 +370,7 @@ async fn execute_analyze_image(
         name: None,
     }];
 
-    super::ai::create_chat_completion_non_stream(
+    let content = super::ai::create_chat_completion_non_stream(
         state,
         messages,
         Some(model.as_str()),
@@ -270,8 +379,28 @@ async fn execute_analyze_image(
         None,
         None,
     )
-    .await
-    .map(|r| r.content)
+    .await?
+    .content;
+
+    Ok(ToolCallOutput::Text(content))
+}
+
+fn resolve_vision_model(state: &AppState, conversation: &Conversation) -> String {
+    let config = state.snapshot_config();
+    if let Some(model) = conversation
+        .last_model
+        .as_deref()
+        .map(str::trim)
+        .filter(|m| !m.is_empty())
+    {
+        if super::model_catalog::model_supports_vision(model) {
+            return model.to_string();
+        }
+    }
+    if super::model_catalog::model_supports_vision(&config.ai_model) {
+        return config.ai_model.clone();
+    }
+    config.ai_model.clone()
 }
 
 async fn execute_analyze_audio(
@@ -343,4 +472,47 @@ fn execute_read_attachment(
         }
         _ => Err(AppError::bad_request("Attachment is not readable text or PDF")),
     }
+}
+
+async fn execute_web_search(arguments_json: &str) -> Result<String, AppError> {
+    let args: Value = serde_json::from_str(arguments_json)
+        .map_err(|_| AppError::bad_request("Invalid web_search arguments"))?;
+    let query = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::bad_request("query is required"))?;
+    super::web_search::search_web(query).await
+}
+
+async fn execute_search_knowledge(state: &AppState, arguments_json: &str) -> Result<String, AppError> {
+    let args: Value = serde_json::from_str(arguments_json)
+        .map_err(|_| AppError::bad_request("Invalid search_knowledge_base arguments"))?;
+    let query = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::bad_request("query is required"))?;
+    let top_k = args
+        .get("top_k")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(3) as usize;
+    super::knowledge::KnowledgeService::search_tool(state, &state.data_dir, query, top_k).await
+}
+
+async fn execute_generate_image(
+    state: &AppState,
+    arguments_json: &str,
+) -> Result<ToolCallOutput, AppError> {
+    let args: Value = serde_json::from_str(arguments_json)
+        .map_err(|_| AppError::bad_request("Invalid generate_image arguments"))?;
+    let prompt = args
+        .get("prompt")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::bad_request("prompt is required"))?;
+    let size = args.get("size").and_then(|v| v.as_str());
+
+    let image = super::image_gen::generate_image(state, prompt, size).await?;
+    Ok(ToolCallOutput::GeneratedImage {
+        image: image.clone(),
+        summary: "Image generated successfully. It is attached to the assistant reply.".to_string(),
+    })
 }

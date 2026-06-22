@@ -36,7 +36,8 @@ npm run test:rust    # Rust unit tests
 |------|---------|
 | `client/` | React + Vite frontend |
 | `src-tauri/` | Rust backend, Tauri commands, persistence |
-| `assets/` | Logo, banner, screenshots for README |
+| `assets/` | Logo, banner |
+| `docs/screenshots/` | README & landing page screenshots, demo GIF |
 | `scripts/` | Release packaging and SHA256 generation |
 | `docs/` | Architecture, trust, and project docs |
 
