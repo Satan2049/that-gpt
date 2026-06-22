@@ -63,8 +63,6 @@ After each release build, update **all three**:
 
 ### Published reports (v2.5.0)
 
-_Add VirusTotal links after building and uploading release binaries._
-
 | File | VirusTotal |
 |------|------------|
 | NSIS setup EXE | *TBD* |
@@ -72,8 +70,8 @@ _Add VirusTotal links after building and uploading release binaries._
 
 ```markdown
 ## VirusTotal reports (v2.5.0)
-- NSIS installer: <paste URL after upload>
-- Portable EXE: <paste URL after upload>
+- NSIS installer: https://www.virustotal.com/gui/file/b5f15ed3b73760183aba1cd279a048c31e6b43fc3192ac4e59006d1a38ab8fe6?nocache=1
+- Portable EXE: https://www.virustotal.com/gui/file/e8fe3595100696078676af66ee53ba99d6b9ad402d64f21d8ea9f6f6b68a9ecf?nocache=1
 
 Verify checksums: https://github.com/Satan2049/that-gpt/blob/main/SHA256.txt
 ```
