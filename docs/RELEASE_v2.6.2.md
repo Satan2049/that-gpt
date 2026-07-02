@@ -2,12 +2,13 @@
 
 **Mobile + cross-platform desktop** — Android sideload, iOS simulator, Windows/macOS/Linux desktop.
 
-Push tag `v2.6.2` to trigger:
+Push tag `v2.6.2` to trigger **mobile only**:
 
 | Workflow | Artifacts |
 |----------|-----------|
-| [`.github/workflows/release.yml`](../.github/workflows/release.yml) | Desktop: NSIS, portable EXE, DMG, AppImage |
-| [`.github/workflows/mobile-release.yml`](../.github/workflows/mobile-release.yml) | Android debug + unsigned APK, iOS sim zip |
+| [`.github/workflows/mobile-release.yml`](../.github/workflows/mobile-release.yml) | Android debug APK, iOS sim zip |
+
+Desktop (Win/macOS/Linux) is **manual**: Actions → **Release (Desktop)** → Run workflow.
 
 See also: [Fork builds from GitHub Actions](FORK_BUILDS.md) · [Mobile build guide](MOBILE_BUILD.md)
 

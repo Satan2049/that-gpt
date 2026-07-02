@@ -1,9 +1,14 @@
-name: Release
+name: Release (Desktop)
 
+# Desktop Win/macOS/Linux — run manually when needed.
+# Mobile releases use mobile-release.yml on tag push.
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag (e.g. v2.6.2)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -27,6 +32,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -52,20 +59,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: .
-          tagName: ${{ github.ref_name }}
-          releaseName: ThatGPT ${{ github.ref_name }}
+          tagName: ${{ inputs.tag }}
+          releaseName: ThatGPT ${{ inputs.tag }}
           releaseBody: |
-            See [RELEASE_v2.6.2.md](https://github.com/${{ github.repository }}/blob/main/docs/RELEASE_v2.6.2.md) and [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md).
+            Desktop artifacts for ${{ inputs.tag }}.
 
-            **Fork builds:** [FORK_BUILDS.md](https://github.com/${{ github.repository }}/blob/main/docs/FORK_BUILDS.md)
-
-            | Platform | Artifacts | VirusTotal |
-            |----------|-----------|------------|
-            | Windows | NSIS installer + portable EXE | _[VT — Windows installer]_ · _[VT — portable]_ |
-            | macOS | DMG (Apple Silicon) | _[VT — macOS DMG]_ |
-            | Linux | AppImage | _[VT — AppImage]_ |
-
-            Mobile APKs: see `mobile-release.yml` assets. Paste VirusTotal links in the release description.
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md).
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -78,7 +77,7 @@ jobs:
       - name: Download release assets
         uses: robinraju/release-downloader@v1
         with:
-          tag: ${{ github.ref_name }}
+          tag: ${{ inputs.tag }}
           fileName: "*"
           out-file-path: release-assets
       - name: Generate SHA256 checksums
@@ -89,5 +88,5 @@ jobs:
       - name: Upload checksums to release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ inputs.tag }}
           files: release-assets/SHA256.txt

@@ -41,12 +41,13 @@ git push origin main
 git push origin v2.6.2
 ```
 
-Pushing tag `v2.6.2` triggers **two** workflows in parallel:
+Pushing tag `v2.6.2` triggers **mobile release only**:
 
 | Workflow | Runs on | Produces |
 |----------|---------|----------|
-| `release.yml` | `ubuntu-22.04`, `macos-latest`, `windows-latest` | NSIS, portable EXE, DMG, AppImage + `SHA256.txt` |
-| `mobile-release.yml` | `ubuntu-22.04` (+ optional `macos-latest` for iOS sim) | Debug APK, unsigned release APK, iOS sim zip |
+| `mobile-release.yml` | `ubuntu-22.04` (+ optional `macos-latest` for iOS sim) | Android debug APK, iOS sim zip |
+
+Desktop (Win/macOS/Linux) is **not** built on tag push. Run **Release (Desktop)** manually from Actions when needed.
 
 Monitor progress: **Actions** tab on your fork.
 
@@ -82,8 +83,10 @@ For validation only (no Release assets):
 
 | Workflow | Trigger | Output |
 |----------|---------|--------|
-| `ci.yml` | push / PR to `main` | Rust tests + desktop build matrix |
+| `ci.yml` | push / PR to `main` | Rust tests + client build |
 | `mobile-ci.yml` | push / PR to `main` | Debug APK artifact (download from run) |
+| `mobile-release.yml` | tag `v*` | Android APK + iOS sim zip on Release |
+| `release.yml` | **manual** | Desktop Win/macOS/Linux (optional) |
 
 These do **not** attach files to a GitHub Release.
 

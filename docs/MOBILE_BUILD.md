@@ -72,9 +72,11 @@ Release assets are attached by [`.github/workflows/mobile-release.yml`](../.gith
 | Workflow | Trigger | Output |
 |----------|---------|--------|
 | [`mobile-ci.yml`](../.github/workflows/mobile-ci.yml) | push/PR | Debug APK artifact |
-| [`mobile-release.yml`](../.github/workflows/mobile-release.yml) | tag `v*` | APKs + iOS sim zip on GitHub Release |
+| [`mobile-release.yml`](../.github/workflows/mobile-release.yml) | tag `v*` | Android debug APK + iOS sim zip on GitHub Release |
+| [`ci.yml`](../.github/workflows/ci.yml) | push/PR | Rust tests + client build only |
+| [`release.yml`](../.github/workflows/release.yml) | **manual** (`workflow_dispatch`) | Desktop Win/macOS/Linux (optional) |
 
-Desktop builds remain in [`release.yml`](../.github/workflows/release.yml).
+Tag push runs **mobile-release only** — not desktop.
 
 ## Phase 2 — MobileShell UI
 

@@ -22,8 +22,7 @@
     "shortDescription": "ThatGPT mobile chat for OpenAI-compatible APIs",
     "longDescription": "ThatGPT is a local-first chat client for OpenAI-compatible APIs with Persian and English UI.",
     "android": {
-      "minSdkVersion": 24,
-      "abiFilters": ["arm64-v8a", "armeabi-v7a"]
+      "minSdkVersion": 24
     }
   }
 }
