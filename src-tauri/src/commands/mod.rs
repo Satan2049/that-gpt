@@ -7,3 +7,4 @@ pub mod prompt;
 pub mod provider;
 pub mod settings;
 pub mod template;
+pub mod voice;

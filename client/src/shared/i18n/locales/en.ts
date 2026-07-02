@@ -35,7 +35,10 @@ export const en: Translations = {
     uploadImage: "Upload image",
     temporary: "Temporary",
     burnIt: "Burn it",
-    ephemeralHint: "This chat is not saved to disk"
+    ephemeralHint: "This chat is not saved to disk",
+    startVoice: "Hold to speak",
+    stopVoice: "Release to stop",
+    retry: "Retry"
   },
   suggestions: [
     "Explain how a neural network learns",
@@ -73,6 +76,55 @@ export const en: Translations = {
     openMenu: "Open menu",
     resizeSidebar: "Resize sidebar",
     closeSidebar: "Close sidebar"
+  },
+  mobile: {
+    chats: "Chats",
+    projects: "Projects",
+    library: "Library",
+    more: "More",
+    newChat: "New chat",
+    backToChats: "Back to chats",
+    backToProjects: "Back to projects",
+    tabNavigation: "Main navigation",
+    messageActions: "Message actions"
+  },
+  search: {
+    title: "Search",
+    placeholder: "Search chats… or type > for commands",
+    newChat: "New chat",
+    searching: "Searching…",
+    noResults: "No conversations found.",
+    noCommands: "No matching commands.",
+    commands: "Commands",
+    pinned: "Pinned",
+    temporary: "Temporary",
+    today: "Today",
+    yesterday: "Yesterday",
+    previous7Days: "Previous 7 days",
+    older: "Older"
+  },
+  library: {
+    title: "Library",
+    subtitle: "Attachments from your saved conversations ({count} items)",
+    filterAll: "All",
+    filterImages: "Images",
+    filterFiles: "Files",
+    loading: "Loading attachments…",
+    emptyTitle: "No attachments yet",
+    emptySub: "Images and files you attach in chats will show up here.",
+    modified: "Modified",
+    name: "Name",
+    size: "Size",
+    source: "Source chat",
+    untitledChat: "Untitled chat",
+    openChat: "Open chat"
+  },
+  titleBar: {
+    appName: "ThatGPT",
+    minimize: "Minimize",
+    maximize: "Maximize",
+    restore: "Restore",
+    close: "Close"
   },
   projects: {
     title: "Projects",
@@ -127,6 +179,7 @@ export const en: Translations = {
     english: "English",
     persian: "Persian (فارسی)",
     generalHint: "ThatGPT runs locally on your machine. No cloud account required.",
+    notifyOnComplete: "Notify when a response finishes (when the window is unfocused)",
     save: "Save",
     saved: "Saved",
     advanced: "Advanced"

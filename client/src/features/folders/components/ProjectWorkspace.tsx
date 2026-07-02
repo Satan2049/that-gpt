@@ -11,9 +11,12 @@ type Tab = "chats" | "sources";
 type Props = {
   folderId: string;
   composerRef: RefObject<ComposerHandle | null>;
+  compact?: boolean;
+  onOpenChat?: (id: string) => void;
+  onNewChat?: () => void;
 };
 
-export function ProjectWorkspace({ folderId, composerRef }: Props) {
+export function ProjectWorkspace({ folderId, composerRef, compact, onOpenChat, onNewChat }: Props) {
   const { t } = useTranslation();
   const folders = useChatStore((s) => s.folders);
   const summaries = useChatStore((s) => s.summaries);
@@ -37,13 +40,21 @@ export function ProjectWorkspace({ folderId, composerRef }: Props) {
   );
   const sources = folder?.sources ?? [];
 
-  const onNewChat = async () => {
+  const handleNewChat = async () => {
+    if (onNewChat) {
+      onNewChat();
+      return;
+    }
     await createConversationInFolder(folderId);
     await setSidebarPanel("chats");
     composerRef.current?.focus();
   };
 
-  const onOpenChat = async (id: string) => {
+  const handleOpenChat = async (id: string) => {
+    if (onOpenChat) {
+      onOpenChat(id);
+      return;
+    }
     await selectConversation(id);
     await setSidebarPanel("chats");
     composerRef.current?.focus();
@@ -71,13 +82,13 @@ export function ProjectWorkspace({ folderId, composerRef }: Props) {
   }
 
   return (
-    <div className="project-workspace">
-      <header className="project-workspace-header">
-        <div className="project-workspace-title-row">
-          <h1 className="project-workspace-title" dir="auto">
-            {folder.name}
-          </h1>
-          <div className="project-workspace-actions">
+    <div className={compact ? "project-workspace project-workspace--compact" : "project-workspace"}>
+      {compact ? (
+        <>
+          <div className="project-workspace-compact-bar">
+            <h1 className="project-workspace-title" dir="auto">
+              {folder.name}
+            </h1>
             <button
               type="button"
               className="project-btn-ghost"
@@ -86,55 +97,93 @@ export function ProjectWorkspace({ folderId, composerRef }: Props) {
             >
               {t.projects.settings}
             </button>
-            <div className="project-menu-wrap">
+          </div>
+          <button type="button" className="project-new-chat-bar" onClick={() => void handleNewChat()}>
+            <span className="project-new-chat-plus">+</span>
+            {t.projects.newChatIn} {folder.name}
+          </button>
+          <div className="project-tabs">
+            <button
+              type="button"
+              className={tab === "chats" ? "project-tab active" : "project-tab"}
+              onClick={() => setTab("chats")}
+            >
+              {t.projects.chats}
+            </button>
+            <button
+              type="button"
+              className={tab === "sources" ? "project-tab active" : "project-tab"}
+              onClick={() => setTab("sources")}
+            >
+              {t.projects.sources}
+            </button>
+          </div>
+        </>
+      ) : (
+        <header className="project-workspace-header">
+          <div className="project-workspace-title-row">
+            <h1 className="project-workspace-title" dir="auto">
+              {folder.name}
+            </h1>
+            <div className="project-workspace-actions">
               <button
                 type="button"
-                className="project-icon-btn"
-                aria-label={t.projects.projectMenu}
-                onClick={() => setMenuOpen((v) => !v)}
+                className="project-btn-ghost"
+                title={t.projects.projectSettings}
+                onClick={() => setSettingsOpen(true)}
               >
-                ···
+                {t.projects.settings}
               </button>
-              {menuOpen ? (
-                <div className="project-menu-dropdown" role="menu">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setSettingsOpen(true);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    {t.projects.projectSettings}
-                  </button>
-                </div>
-              ) : null}
+              <div className="project-menu-wrap">
+                <button
+                  type="button"
+                  className="project-icon-btn"
+                  aria-label={t.projects.projectMenu}
+                  onClick={() => setMenuOpen((v) => !v)}
+                >
+                  ···
+                </button>
+                {menuOpen ? (
+                  <div className="project-menu-dropdown" role="menu">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setSettingsOpen(true);
+                        setMenuOpen(false);
+                      }}
+                    >
+                      {t.projects.projectSettings}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
 
-        <button type="button" className="project-new-chat-bar" onClick={() => void onNewChat()}>
-          <span className="project-new-chat-plus">+</span>
-          {t.projects.newChatIn} {folder.name}
-        </button>
+          <button type="button" className="project-new-chat-bar" onClick={() => void handleNewChat()}>
+            <span className="project-new-chat-plus">+</span>
+            {t.projects.newChatIn} {folder.name}
+          </button>
 
-        <div className="project-tabs">
-          <button
-            type="button"
-            className={tab === "chats" ? "project-tab active" : "project-tab"}
-            onClick={() => setTab("chats")}
-          >
-            {t.projects.chats}
-          </button>
-          <button
-            type="button"
-            className={tab === "sources" ? "project-tab active" : "project-tab"}
-            onClick={() => setTab("sources")}
-          >
-            {t.projects.sources}
-          </button>
-        </div>
-      </header>
+          <div className="project-tabs">
+            <button
+              type="button"
+              className={tab === "chats" ? "project-tab active" : "project-tab"}
+              onClick={() => setTab("chats")}
+            >
+              {t.projects.chats}
+            </button>
+            <button
+              type="button"
+              className={tab === "sources" ? "project-tab active" : "project-tab"}
+              onClick={() => setTab("sources")}
+            >
+              {t.projects.sources}
+            </button>
+          </div>
+        </header>
+      )}
 
       {tab === "chats" ? (
         <div className="project-tab-panel">
@@ -147,7 +196,7 @@ export function ProjectWorkspace({ folderId, composerRef }: Props) {
             <ul className="project-chat-list">
               {chats.map((chat) => (
                 <li key={chat.id}>
-                  <button type="button" className="project-chat-row" onClick={() => void onOpenChat(chat.id)}>
+                  <button type="button" className="project-chat-row" onClick={() => void handleOpenChat(chat.id)}>
                     <span className="project-chat-title" dir="auto">
                       {chat.title}
                     </span>

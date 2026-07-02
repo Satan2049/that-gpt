@@ -6,15 +6,54 @@ use crate::models::{ConnectionTestResult, ModelInfo};
 use crate::repository::ProviderRepository;
 use crate::services::ai::test_provider_connection;
 use crate::services::model_catalog::infer_one;
+use crate::services::secrets::{delete_secret, get_secret, provider_key, set_secret};
 
 pub struct ProviderService;
 
 impl ProviderService {
+    fn hydrate_provider_keys(store: &mut ProviderStore) {
+        for profile in &mut store.providers {
+            if let Some(key) = get_secret(&provider_key(&profile.id)) {
+                profile.api_key = key;
+                continue;
+            }
+            if !profile.api_key.is_empty() {
+                let _ = set_secret(&provider_key(&profile.id), &profile.api_key);
+            }
+        }
+    }
+
+    fn store_for_disk(store: &ProviderStore) -> ProviderStore {
+        let mut disk = store.clone();
+        for profile in &mut disk.providers {
+            profile.api_key = String::new();
+        }
+        disk
+    }
+
+    fn persist_provider_keys(store: &ProviderStore) {
+        for profile in &store.providers {
+            if profile.api_key.is_empty() {
+                let _ = delete_secret(&provider_key(&profile.id));
+            } else {
+                let _ = set_secret(&provider_key(&profile.id), &profile.api_key);
+            }
+        }
+    }
+
     pub async fn load_store(state: &AppState) -> Result<ProviderStore, AppError> {
-        if let Some(store) = ProviderRepository::load(&state.data_dir)
+        if let Some(mut store) = ProviderRepository::load(&state.data_dir)
             .await
             .map_err(|e| AppError::Internal(e.to_string()))?
         {
+            Self::hydrate_provider_keys(&mut store);
+            let disk = Self::store_for_disk(&store);
+            if store.providers.iter().any(|p| !p.api_key.is_empty()) {
+                Self::persist_provider_keys(&store);
+                ProviderRepository::save(&state.data_dir, &disk)
+                    .await
+                    .map_err(|e| AppError::Internal(e.to_string()))?;
+            }
             return Ok(store);
         }
 
@@ -39,7 +78,8 @@ impl ProviderService {
             }],
         };
 
-        ProviderRepository::save(&state.data_dir, &store)
+        Self::persist_provider_keys(&store);
+        ProviderRepository::save(&state.data_dir, &Self::store_for_disk(&store))
             .await
             .map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -47,7 +87,8 @@ impl ProviderService {
     }
 
     async fn persist_store(state: &AppState, store: &ProviderStore) -> Result<(), AppError> {
-        ProviderRepository::save(&state.data_dir, store)
+        Self::persist_provider_keys(store);
+        ProviderRepository::save(&state.data_dir, &Self::store_for_disk(store))
             .await
             .map_err(|e| AppError::Internal(e.to_string()))
     }
@@ -100,6 +141,7 @@ impl ProviderService {
         if store.providers.len() == before {
             return Err(AppError::not_found("Provider not found"));
         }
+        let _ = delete_secret(&provider_key(id));
         if store.active_id == id {
             store.active_id = store.providers[0].id.clone();
             Self::activate_profile(state, &store.providers[0]).await?;

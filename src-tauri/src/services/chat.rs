@@ -49,8 +49,12 @@ impl ChatService {
             .map_err(|e| AppError::Internal(e.to_string()))
     }
 
-    fn summary_sort_key(summary: &ConversationSummary) -> (bool, String) {
-        (!summary.pinned, summary.updated_at.clone())
+    fn sort_summaries(summaries: &mut [ConversationSummary]) {
+        summaries.sort_by(|a, b| {
+            b.pinned
+                .cmp(&a.pinned)
+                .then_with(|| b.updated_at.cmp(&a.updated_at))
+        });
     }
 
     pub async fn list_conversations(
@@ -77,11 +81,7 @@ impl ChatService {
             .map(|c| c.to_summary())
             .collect();
 
-        summaries.sort_by(|a, b| {
-            Self::summary_sort_key(a)
-                .cmp(&Self::summary_sort_key(b))
-                .then_with(|| b.updated_at.cmp(&a.updated_at))
-        });
+        Self::sort_summaries(&mut summaries);
 
         Ok(summaries)
     }
@@ -800,17 +800,19 @@ impl ChatService {
         }
 
         if q.is_empty() {
-            return Ok(all
-                .into_iter()
-                .map(|c| c.to_summary())
-                .collect());
+            let mut summaries: Vec<ConversationSummary> =
+                all.into_iter().map(|c| c.to_summary()).collect();
+            Self::sort_summaries(&mut summaries);
+            return Ok(summaries);
         }
 
-        Ok(all
+        let mut summaries: Vec<ConversationSummary> = all
             .into_iter()
             .filter(|c| conversation_matches_query(c, &q))
             .map(|c| c.to_summary())
-            .collect())
+            .collect();
+        Self::sort_summaries(&mut summaries);
+        Ok(summaries)
     }
 }
 

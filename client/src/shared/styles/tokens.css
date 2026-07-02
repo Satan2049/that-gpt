@@ -32,6 +32,7 @@
   --sidebar-width: 272px;
   --sidebar-collapsed-width: 0px;
   --header-height: 48px;
+  --titlebar-height: 32px;
   --composer-max-width: 48rem;
   --message-max-width: 48rem;
   --error: #ef4444;

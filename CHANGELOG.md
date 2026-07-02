@@ -5,6 +5,60 @@ All notable changes to ThatGPT are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.2] - 2026-06-20
+
+Release notes: [docs/RELEASE_v2.6.2.md](docs/RELEASE_v2.6.2.md) · Fork builds: [docs/FORK_BUILDS.md](docs/FORK_BUILDS.md) · Mobile: [docs/MOBILE_BUILD.md](docs/MOBILE_BUILD.md)
+
+**Mobile (Phase 1–3) + desktop** — Android/iOS simulator builds, dedicated mobile shell, polish for touch/RTL/back navigation.
+
+### Added
+
+- Tauri Android target (`com.thatgpt.app`) with `tauri android init` scripts
+- Platform configs: `tauri.android.conf.json`, `tauri.ios.conf.json`
+- Mobile capability: `src-tauri/capabilities/mobile.json`
+- npm scripts: `android:init`, `android:build`, `ios:init`, `ios:build:sim`
+- GitHub Actions: `mobile-ci.yml`, `mobile-release.yml`
+- Android manifest patches (mic, notifications) via `scripts/patch-android-manifest.mjs`
+- **MobileShell** — bottom tab navigation (Chats, Projects, Library, More)
+- `useShellLayout` — auto-detect mobile (Tauri Android/iOS, narrow viewport, touch)
+- `mobile.css` — safe areas, touch-first UI, full-screen settings/search
+- **Phase 3 polish:** bottom sheets for message actions, Android back button stack, RTL mobile layout, library cards, compact project workspace
+- Release docs: `RELEASE_v2.6.2.md`, `FORK_BUILDS.md` (VirusTotal link placeholders)
+
+### Notes
+
+- Android ships **debug-signed APK** for sideload + **unsigned release APK** for manual signing
+- iOS ships **simulator `.app` zip** only (no App Store / TestFlight signing)
+
+## [2.6.1] - 2026-06-20
+
+Release notes: [docs/RELEASE_v2.6.1.md](docs/RELEASE_v2.6.1.md)
+
+**Cross-platform desktop** — Windows, macOS (Apple Silicon), and Linux via GitHub Actions.
+
+### Added
+
+- **Voice input** — Hold-to-talk mic in composer; browser speech recognition with Whisper API fallback
+- **OS credential storage** — API keys in Windows Credential Manager / macOS Keychain / Linux secret service
+- **GitHub Actions CI** — Rust tests, client build, Tauri matrix (Windows, macOS, Linux)
+- **GitHub Actions release** — Tagged releases with platform bundles + SHA256 checksums
+- **Settings toggle** — Notify when response completes (unfocused window only)
+
+### Changed
+
+- User message bubbles use logo purple instead of green
+- Message ⋯ dropdown anchors correctly on assistant/user messages
+- j/k message navigation scrolls focused message into view
+- Update check uses semver comparison
+
+### Fixed
+
+- Notifications fire only after successful generation (not on error/cancel)
+- Notification icon path (`/logo.svg`)
+- Retry button i18n (EN/FA)
+- Message edit/retry buttons visible again (CSS regression)
+- Global button styles no longer inflate compact icon/action buttons
+
 ## [2.5.0] - 2026-06-20
 
 Release notes: [docs/RELEASE_v2.5.0.md](docs/RELEASE_v2.5.0.md)

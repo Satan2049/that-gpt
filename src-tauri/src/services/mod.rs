@@ -12,12 +12,14 @@ mod library;
 mod model_catalog;
 pub mod model_prices;
 mod pdf_text;
-mod prompt;
 mod provider;
+mod prompt;
+mod secrets;
 mod templates;
 mod tools;
 pub mod update_check;
 mod usage_log;
+mod version_compare;
 mod web_search;
 
 pub use ai::{
@@ -32,6 +34,7 @@ pub use library::LibraryService;
 pub use prompt::PromptService;
 pub use model_prices::{ModelPrice, ModelPriceService};
 pub use update_check::check_latest_release;
+pub use secrets::{delete_secret, get_secret, provider_key, set_secret};
 pub use provider::ProviderService;
 pub use templates::{ConversationTemplate, SaveTemplateBody, TemplateService};
 pub use usage_log::{UsageDaySummary, UsageLogService};

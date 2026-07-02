@@ -130,6 +130,7 @@ pub fn run() {
             commands::template::save_conversation_template,
             commands::template::delete_template,
             commands::template::create_conversation_from_template,
+            commands::voice::transcribe_voice,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

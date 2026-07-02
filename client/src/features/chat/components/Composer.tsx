@@ -27,6 +27,7 @@ import { useImageLimits } from "../../settings/store/settingsStore";
 import { usePromptStore } from "../../prompt/store/promptStore";
 import { readFileAsBase64Data } from "../lib/readFileAttachment";
 import { useChatStore } from "../store/chatStore";
+import { useVoiceInput } from "../hooks/useVoiceInput";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { autoDirProps } from "../../../shared/i18n/textDirection";
 
@@ -68,6 +69,19 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
   const patchConversation = useChatStore((s) => s.patchConversation);
   const presets = usePromptStore((s) => s.presets);
   const { maxCount: maxAttachments } = useImageLimits();
+
+  const appendTranscript = (transcript: string) => {
+    setText((prev) => (prev.trim() ? `${prev.trimEnd()} ${transcript}` : transcript));
+    textareaRef.current?.focus();
+  };
+
+  const {
+    listening,
+    error: voiceError,
+    startListening,
+    stopListening,
+    clearError: clearVoiceError
+  } = useVoiceInput(appendTranscript);
 
   pendingRef.current = pending;
 
@@ -345,9 +359,14 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
         addFiles(Array.from(e.dataTransfer.files ?? []));
       }}
     >
-      {localError ? (
+      {localError || voiceError ? (
         <div className="composer-local-error" role="status">
-          {localError}
+          {localError ?? voiceError}
+          {voiceError ? (
+            <button type="button" className="composer-error-dismiss" onClick={clearVoiceError}>
+              ×
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -436,6 +455,41 @@ export const Composer = forwardRef<ComposerHandle>(function Composer(_props, ref
           rows={1}
           {...autoDirProps}
         />
+
+        <button
+          type="button"
+          className={listening ? "composer-voice-btn active" : "composer-voice-btn"}
+          aria-label={listening ? t.chat.stopVoice : t.chat.startVoice}
+          aria-pressed={listening}
+          disabled={!activeId || preparing}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            if (!listening) void startListening();
+          }}
+          onPointerUp={() => {
+            if (listening) void stopListening();
+          }}
+          onPointerLeave={() => {
+            if (listening) void stopListening();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === " " || e.key === "Enter") {
+              e.preventDefault();
+              if (!listening) void startListening();
+            }
+          }}
+          onKeyUp={(e) => {
+            if (e.key === " " || e.key === "Enter") {
+              e.preventDefault();
+              if (listening) void stopListening();
+            }
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 14a3 3 0 003-3V7a3 3 0 10-6 0v4a3 3 0 003 3z" strokeLinecap="round" />
+            <path d="M19 11a7 7 0 01-14 0M12 18v3" strokeLinecap="round" />
+          </svg>
+        </button>
 
         {sending ? (
           <button

@@ -74,6 +74,8 @@ export function useAppBootstrap() {
   const sending = useChatStore((s) => s.sending);
   const streamingMessageId = useChatStore((s) => s.streamingMessageId);
   const activeConversation = useChatStore((s) => s.activeConversation);
+  const error = useChatStore((s) => s.error);
+  const retryAfterMessageId = useChatStore((s) => s.retryAfterMessageId);
 
   useEffect(() => {
     const nextTheme = readStoredTheme();
@@ -158,15 +160,18 @@ export function useAppBootstrap() {
   useEffect(() => {
     const generating = sending || Boolean(streamingMessageId);
     if (wasGeneratingRef.current && !generating) {
-      void notifyGenerationComplete(
-        "ThatGPT",
-        activeConversation?.title
-          ? `Finished: ${activeConversation.title}`
-          : "Response ready"
-      );
+      const failed = Boolean(error) || Boolean(retryAfterMessageId);
+      if (!failed) {
+        void notifyGenerationComplete(
+          "ThatGPT",
+          activeConversation?.title
+            ? `Finished: ${activeConversation.title}`
+            : "Response ready"
+        );
+      }
     }
     wasGeneratingRef.current = generating;
-  }, [sending, streamingMessageId, activeConversation?.title]);
+  }, [sending, streamingMessageId, activeConversation?.title, error, retryAfterMessageId]);
 
   const onToggleTheme = () => {
     setTheme((current) => toggleTheme(current));

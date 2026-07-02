@@ -1,5 +1,6 @@
 use crate::error::AppError;
 use crate::models::api::UpdateCheckResult;
+use crate::services::version_compare;
 
 const REPO: &str = "Satan2049/that-gpt";
 
@@ -37,7 +38,7 @@ pub async fn check_latest_release() -> Result<UpdateCheckResult, AppError> {
         .trim_start_matches('v')
         .to_string();
     let current = env!("CARGO_PKG_VERSION");
-    let update_available = !latest.is_empty() && latest != current;
+    let update_available = !latest.is_empty() && version_compare::is_newer_version(&latest, current);
     let release_url = payload["html_url"].as_str().map(str::to_string);
     let message = if update_available {
         format!("Version {latest} is available (you have {current}).")

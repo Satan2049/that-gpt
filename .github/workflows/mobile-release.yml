@@ -1,0 +1,117 @@
+name: Mobile Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: sdkmanager "ndk;27.0.12077973"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build debug APK for sideload
+        run: npm run android:build:apk:debug
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+
+      - name: Build release unsigned APK
+        run: npm run android:build:apk:unsigned
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+
+      - name: Stage mobile artifacts
+        run: |
+          node scripts/collect-mobile-artifacts.mjs
+          mkdir -p mobile-upload
+          cp release-mobile/*.apk mobile-upload/ 2>/dev/null || true
+          find src-tauri/gen/android/app/build/outputs/apk -name '*-unsigned.apk' -exec cp {} mobile-upload/ \;
+          ls -la mobile-upload/
+
+      - name: Upload Android assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: mobile-upload/*
+          fail_on_unmatched_files: false
+
+  ios-simulator:
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios-sim
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check iOS CLI availability
+        id: ios_cli
+        run: |
+          if npx tauri ios --help >/dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build iOS simulator .app (unsigned)
+        if: steps.ios_cli.outputs.available == 'true'
+        run: npm run ios:build:sim
+
+      - name: Zip simulator bundle
+        if: steps.ios_cli.outputs.available == 'true'
+        run: |
+          APP=$(find src-tauri/gen/apple/build -name '*.app' -type d | head -1)
+          if [ -n "$APP" ]; then
+            ditto -c -k --sequesterRsrc --keepParent "$APP" "ThatGPT-ios-simulator-${{ github.ref_name }}.zip"
+          fi
+
+      - name: Upload iOS simulator zip to GitHub Release
+        if: steps.ios_cli.outputs.available == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: ThatGPT-ios-simulator-*.zip
+          fail_on_unmatched_files: false

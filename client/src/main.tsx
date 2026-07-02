@@ -6,6 +6,7 @@ import { applyLocale, readStoredLocale } from "./shared/i18n/localeStore";
 import { applySidebarWidth, readSidebarWidth } from "./shared/lib/sidebarState";
 import "./shared/styles/tokens.css";
 import "./shared/styles/global.css";
+import "./shared/styles/mobile.css";
 
 applySidebarWidth(readSidebarWidth());
 applyLocale(readStoredLocale());

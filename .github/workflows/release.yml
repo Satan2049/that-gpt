@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            args: ""
+            target: linux-x64
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+            target: macos-arm64
+          - platform: windows-latest
+            args: ""
+            target: windows-x64
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+      - name: Install dependencies
+        run: npm ci
+      - name: Build and upload release assets
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: .
+          tagName: ${{ github.ref_name }}
+          releaseName: ThatGPT ${{ github.ref_name }}
+          releaseBody: |
+            See [RELEASE_v2.6.2.md](https://github.com/${{ github.repository }}/blob/main/docs/RELEASE_v2.6.2.md) and [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md).
+
+            **Fork builds:** [FORK_BUILDS.md](https://github.com/${{ github.repository }}/blob/main/docs/FORK_BUILDS.md)
+
+            | Platform | Artifacts | VirusTotal |
+            |----------|-----------|------------|
+            | Windows | NSIS installer + portable EXE | _[VT — Windows installer]_ · _[VT — portable]_ |
+            | macOS | DMG (Apple Silicon) | _[VT — macOS DMG]_ |
+            | Linux | AppImage | _[VT — AppImage]_ |
+
+            Mobile APKs: see `mobile-release.yml` assets. Paste VirusTotal links in the release description.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  checksums:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download release assets
+        uses: robinraju/release-downloader@v1
+        with:
+          tag: ${{ github.ref_name }}
+          fileName: "*"
+          out-file-path: release-assets
+      - name: Generate SHA256 checksums
+        run: |
+          cd release-assets
+          sha256sum * > SHA256.txt
+          cat SHA256.txt
+      - name: Upload checksums to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: release-assets/SHA256.txt

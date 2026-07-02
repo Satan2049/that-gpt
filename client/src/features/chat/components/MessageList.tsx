@@ -86,16 +86,18 @@ function AttachmentPreview({ attachments }: { attachments: ChatAttachment[] }) {
 
 function MessageErrorBlock({
   message,
-  onRetry
+  onRetry,
+  retryLabel
 }: {
   message: string;
   onRetry: () => void;
+  retryLabel: string;
 }) {
   return (
     <div className="message-error-block" role="alert">
       <p className="message-error-text">{message}</p>
       <button type="button" className="message-action-btn message-error-retry" onClick={onRetry}>
-        Retry
+        {retryLabel}
       </button>
     </div>
   );
@@ -133,6 +135,11 @@ export function MessageList({
   const setShowBookmarksOnly = useChatStore((s) => s.setShowBookmarksOnly);
   const toggleMessageBookmark = useChatStore((s) => s.toggleMessageBookmark);
   const setEditingMessageId = useChatStore((s) => s.setEditingMessageId);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [activeConversation?.id]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     bottomRef.current?.scrollIntoView({ behavior });
@@ -157,6 +164,12 @@ export function MessageList({
   const visible = visibleMessages
     .filter((m) => m.role === "user" || m.role === "assistant" || m.role === "tool")
     .filter((m) => !showBookmarksOnly || m.bookmarked);
+
+  useEffect(() => {
+    if (focusedIndex < 0 || focusedIndex >= visible.length) return;
+    const msg = visible[focusedIndex];
+    messageRefs.current.get(msg.id)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [focusedIndex, visible]);
 
   const lastAssistantId = (() => {
     for (let i = visible.length - 1; i >= 0; i -= 1) {
@@ -293,6 +306,10 @@ export function MessageList({
           return (
             <div
               key={msg.id}
+              ref={(el) => {
+                if (el) messageRefs.current.set(msg.id, el);
+                else messageRefs.current.delete(msg.id);
+              }}
               className={
                 (msg.role === "user"
                   ? "message message-user message-enter"
@@ -387,6 +404,7 @@ export function MessageList({
               {showRetry ? (
                 <MessageErrorBlock
                   message={error}
+                  retryLabel={t.chat.retry}
                   onRetry={() => void retryMessage(msg.id)}
                 />
               ) : null}

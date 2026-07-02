@@ -9,6 +9,8 @@ use crate::error::AppError;
 use crate::models::settings::UpdateSettingsBody;
 use crate::models::Conversation;
 
+use crate::services::{get_secret, set_secret};
+
 const DEFAULT_BASE_URL: &str = "https://api.openai.com/v1";
 const DEFAULT_MODEL: &str = "gpt-4o-mini";
 const DEFAULT_SYSTEM_PROMPT: &str = "You are a helpful assistant.";
@@ -43,7 +45,7 @@ impl AppConfig {
         }
 
         Self {
-            ai_api_key: std::env::var("AI_API_KEY").unwrap_or_default(),
+            ai_api_key: load_api_key(&env_path),
             ai_base_url: std::env::var("AI_BASE_URL")
                 .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string()),
             ai_model: std::env::var("AI_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string()),
@@ -149,6 +151,18 @@ impl AppConfig {
         })?;
 
         let env_path = config_dir.join(".env");
+        let key_in_keyring = if !self.ai_api_key.is_empty() {
+            set_secret("ai_api_key", &self.ai_api_key)
+        } else {
+            crate::services::delete_secret("ai_api_key");
+            true
+        };
+        let env_api_key = if key_in_keyring && get_secret("ai_api_key").is_some() {
+            String::new()
+        } else {
+            self.ai_api_key.clone()
+        };
+
         let contents = format!(
             "# ThatGPT settings — edited via the app or manually\n\
              AI_API_KEY={}\n\
@@ -167,7 +181,7 @@ impl AppConfig {
              KNOWLEDGE_EMBEDDING_MODEL={}\n\
              WEB_SEARCH_ENABLED={}\n\
              DEV_MODE_ENABLED={}\n",
-            escape_env_value(&self.ai_api_key),
+            escape_env_value(&env_api_key),
             escape_env_value(&self.ai_base_url),
             escape_env_value(&self.ai_model),
             escape_env_value(&self.ai_image_model),
@@ -191,6 +205,19 @@ impl AppConfig {
 
         Ok(())
     }
+}
+
+fn load_api_key(_env_path: &Path) -> String {
+    if let Some(key) = get_secret("ai_api_key") {
+        return key;
+    }
+
+    let from_env = std::env::var("AI_API_KEY").unwrap_or_default();
+    if !from_env.is_empty() {
+        let _ = set_secret("ai_api_key", &from_env);
+    }
+
+    from_env
 }
 
 fn escape_env_value(value: &str) -> String {
@@ -373,8 +400,11 @@ mod tests {
 
     #[test]
     fn saves_and_escapes_multiline_prompt() {
+        use crate::services::{delete_secret, get_secret};
+
         let dir = std::env::temp_dir().join(format!("thatgpt-config-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
+        let _ = delete_secret("ai_api_key");
 
         let config = AppConfig {
             ai_api_key: "sk-test".to_string(),
@@ -397,11 +427,14 @@ mod tests {
 
         config.save_to_env(&dir).unwrap();
         let loaded = AppConfig::load(&dir);
+        let stored_key = get_secret("ai_api_key").unwrap_or_else(|| loaded.ai_api_key.clone());
+        assert_eq!(stored_key, "sk-test");
         assert_eq!(loaded.ai_api_key, "sk-test");
         assert_eq!(loaded.ai_default_system_prompt, "Line one\nLine two");
         assert_eq!(loaded.ai_image_model, "gpt-4o");
         assert_eq!(loaded.ai_request_timeout_ms, 30_000);
 
+        let _ = delete_secret("ai_api_key");
         let _ = std::fs::remove_dir_all(dir);
     }
 }

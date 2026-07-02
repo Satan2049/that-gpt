@@ -12,6 +12,10 @@ import { useSettingsStore } from "../store/settingsStore";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useLocaleStore } from "../../../shared/i18n/localeStore";
 import type { Locale } from "../../../shared/i18n/types";
+import {
+  readNotifyOnComplete,
+  writeNotifyOnComplete
+} from "../../../shared/lib/notifications";
 
 type SettingsForm = {
   aiApiKey: string;
@@ -113,6 +117,7 @@ export function SettingsPanel({
   const [modelPricesJson, setModelPricesJson] = useState("");
   const [pricingNotice, setPricingNotice] = useState<string | null>(null);
   const [updateNotice, setUpdateNotice] = useState<string | null>(null);
+  const [notifyOnComplete, setNotifyOnComplete] = useState(readNotifyOnComplete);
 
   useEffect(() => {
     if (open) {
@@ -308,6 +313,17 @@ export function SettingsPanel({
                         <option value="light">{t.settings.light}</option>
                         <option value="dark">{t.settings.dark}</option>
                       </select>
+                    </label>
+                    <label className="settings-field settings-field--checkbox">
+                      <input
+                        type="checkbox"
+                        checked={notifyOnComplete}
+                        onChange={(e) => {
+                          setNotifyOnComplete(e.target.checked);
+                          writeNotifyOnComplete(e.target.checked);
+                        }}
+                      />
+                      {t.settings.notifyOnComplete}
                     </label>
                     <p className="settings-hint">{t.settings.generalHint}</p>
                   </section>
@@ -644,6 +660,12 @@ export function SettingsPanel({
                           <td>Open settings</td>
                           <td>
                             <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>;</kbd>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Previous / next message</td>
+                          <td>
+                            <kbd>K</kbd> / <kbd>J</kbd>
                           </td>
                         </tr>
                         <tr>

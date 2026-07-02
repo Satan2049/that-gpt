@@ -36,6 +36,9 @@ export type Translations = {
     temporary: string;
     burnIt: string;
     ephemeralHint: string;
+    startVoice: string;
+    stopVoice: string;
+    retry: string;
   };
   suggestions: string[];
   messageActions: {
@@ -68,6 +71,55 @@ export type Translations = {
     openMenu: string;
     resizeSidebar: string;
     closeSidebar: string;
+  };
+  mobile: {
+    chats: string;
+    projects: string;
+    library: string;
+    more: string;
+    newChat: string;
+    backToChats: string;
+    backToProjects: string;
+    tabNavigation: string;
+    messageActions: string;
+  };
+  search: {
+    title: string;
+    placeholder: string;
+    newChat: string;
+    searching: string;
+    noResults: string;
+    noCommands: string;
+    commands: string;
+    pinned: string;
+    temporary: string;
+    today: string;
+    yesterday: string;
+    previous7Days: string;
+    older: string;
+  };
+  library: {
+    title: string;
+    subtitle: string;
+    filterAll: string;
+    filterImages: string;
+    filterFiles: string;
+    loading: string;
+    emptyTitle: string;
+    emptySub: string;
+    name: string;
+    modified: string;
+    size: string;
+    source: string;
+    untitledChat: string;
+    openChat: string;
+  };
+  titleBar: {
+    appName: string;
+    minimize: string;
+    maximize: string;
+    restore: string;
+    close: string;
   };
   projects: {
     title: string;
@@ -121,6 +173,7 @@ export type Translations = {
     english: string;
     persian: string;
     generalHint: string;
+    notifyOnComplete: string;
     save: string;
     saved: string;
     advanced: string;

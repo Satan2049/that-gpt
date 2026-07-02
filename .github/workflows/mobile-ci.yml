@@ -1,0 +1,98 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  android-apk:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: sdkmanager "ndk;27.0.12077973"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build debug APK (unsigned release signing)
+        run: npm run android:build:apk:debug
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+
+      - name: Collect APK artifacts
+        run: node scripts/collect-mobile-artifacts.mjs
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: thatgpt-android-apk-debug
+          path: release-mobile/*.apk
+          if-no-files-found: error
+
+  ios-simulator:
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios-sim
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check iOS CLI availability
+        id: ios_cli
+        run: |
+          if npx tauri ios --help >/dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Tauri iOS CLI is not available on this runner."
+          fi
+
+      - name: Build iOS simulator app (unsigned)
+        if: steps.ios_cli.outputs.available == 'true'
+        run: npm run ios:build:sim
+
+      - name: Upload iOS simulator bundle
+        if: steps.ios_cli.outputs.available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: thatgpt-ios-simulator
+          path: src-tauri/gen/apple/build/**/*.app
+          if-no-files-found: warn

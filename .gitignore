@@ -10,4 +10,6 @@ server/data/prompts/*.json
 !server/data/prompts/.gitkeep
 src-tauri/target/
 src-tauri/gen/android/
+src-tauri/gen/apple/
 release/
+release-mobile/

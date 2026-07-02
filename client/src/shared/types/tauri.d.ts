@@ -14,11 +14,39 @@ interface TauriGlobal {
       handler: (event: { payload: unknown }) => void
     ) => Promise<() => void>;
   };
+  window?: {
+    getCurrentWindow: () => {
+      minimize: () => Promise<void>;
+      toggleMaximize: () => Promise<void>;
+      close: () => Promise<void>;
+      isMaximized: () => Promise<boolean>;
+      isFullscreen: () => Promise<boolean>;
+      setFullscreen: (fullscreen: boolean) => Promise<void>;
+      startDragging: () => Promise<void>;
+    };
+  };
 }
 
 declare global {
   interface Window {
     __TAURI__?: TauriGlobal;
+    SpeechRecognition?: new () => SpeechRecognition;
+    webkitSpeechRecognition?: new () => SpeechRecognition;
+  }
+
+  interface SpeechRecognitionEvent extends Event {
+    results: SpeechRecognitionResultList;
+  }
+
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: ((event: SpeechRecognitionEvent) => void) | null;
+    onerror: ((event: Event) => void) | null;
+    onend: (() => void) | null;
+    start(): void;
+    stop(): void;
   }
 }
 

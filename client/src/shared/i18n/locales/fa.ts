@@ -35,7 +35,10 @@ export const fa: Translations = {
     uploadImage: "بارگذاری تصویر",
     temporary: "موقت",
     burnIt: "حذف کن",
-    ephemeralHint: "این گفتگو روی دیسک ذخیره نمی‌شود"
+    ephemeralHint: "این گفتگو روی دیسک ذخیره نمی‌شود",
+    startVoice: "نگه دار و صحبت کن",
+    stopVoice: "رها کن تا متوقف شود",
+    retry: "تلاش دوباره"
   },
   suggestions: [
     "توضیح بده شبکه عصبی چطور یاد می‌گیرد",
@@ -73,6 +76,55 @@ export const fa: Translations = {
     openMenu: "باز کردن منو",
     resizeSidebar: "تغییر اندازه نوار کناری",
     closeSidebar: "بستن نوار کناری"
+  },
+  mobile: {
+    chats: "گفتگوها",
+    projects: "پروژه‌ها",
+    library: "کتابخانه",
+    more: "بیشتر",
+    newChat: "گفتگوی جدید",
+    backToChats: "بازگشت به گفتگوها",
+    backToProjects: "بازگشت به پروژه‌ها",
+    tabNavigation: "ناوبری اصلی",
+    messageActions: "عملیات پیام"
+  },
+  search: {
+    title: "جستجو",
+    placeholder: "جستجوی گفتگو… یا > برای دستورات",
+    newChat: "گفتگوی جدید",
+    searching: "در حال جستجو…",
+    noResults: "گفتگویی پیدا نشد.",
+    noCommands: "دستور مطابقی نیست.",
+    commands: "دستورات",
+    pinned: "سنجاق‌شده",
+    temporary: "موقت",
+    today: "امروز",
+    yesterday: "دیروز",
+    previous7Days: "۷ روز گذشته",
+    older: "قدیمی‌تر"
+  },
+  library: {
+    title: "کتابخانه",
+    subtitle: "پیوست‌های گفتگوهای ذخیره‌شده ({count} مورد)",
+    filterAll: "همه",
+    filterImages: "تصاویر",
+    filterFiles: "فایل‌ها",
+    loading: "در حال بارگذاری پیوست‌ها…",
+    emptyTitle: "هنوز پیوستی نیست",
+    emptySub: "تصاویر و فایل‌هایی که در گفتگوها ضمیمه می‌کنید اینجا نمایش داده می‌شوند.",
+    modified: "تاریخ",
+    name: "نام",
+    size: "حجم",
+    source: "گفتگوی مبدأ",
+    untitledChat: "گفتگوی بدون عنوان",
+    openChat: "باز کردن گفتگو"
+  },
+  titleBar: {
+    appName: "ThatGPT",
+    minimize: "کوچک‌کردن",
+    maximize: "بزرگ‌کردن",
+    restore: "بازگردانی",
+    close: "بستن"
   },
   projects: {
     title: "پروژه‌ها",
@@ -127,6 +179,7 @@ export const fa: Translations = {
     english: "English (انگلیسی)",
     persian: "فارسی",
     generalHint: "ThatGPT به‌صورت محلی روی دستگاه شما اجرا می‌شود. حساب ابری لازم نیست.",
+    notifyOnComplete: "وقتی پاسخ تمام شد اعلان بده (وقتی پنجره در پس‌زمینه است)",
     save: "ذخیره",
     saved: "ذخیره شد",
     advanced: "پیشرفته"

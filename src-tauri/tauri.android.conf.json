@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.thatgpt.app",
+  "productName": "ThatGPT",
+  "version": "2.6.2",
+  "bundle": {
+    "shortDescription": "ThatGPT mobile chat for OpenAI-compatible APIs",
+    "longDescription": "ThatGPT is a local-first chat client for OpenAI-compatible APIs with Persian and English UI."
+  }
+}

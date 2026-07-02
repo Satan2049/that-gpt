@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { IconCopy, IconEdit, IconMore } from "../../../shared/components/ChatIcons";
+import { BottomSheet } from "../../../shared/components/BottomSheet";
 import { MessageIconButton } from "../../../shared/components/MessageIconButton";
 import { toast } from "../../../shared/components/toastStore";
+import { useMobileLayout } from "../../../shared/hooks/useMobileLayout";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 
 type Props = {
@@ -24,17 +26,19 @@ export function UserMessageActions({
   onToggleBookmark
 }: Props) {
   const { t } = useTranslation();
+  const isMobile = useMobileLayout();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen || isMobile) return;
     const onPointerDown = (e: PointerEvent) => {
       if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     };
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, [menuOpen]);
+  }, [menuOpen, isMobile]);
 
   if (!canEdit || editing) return null;
 
@@ -47,6 +51,41 @@ export function UserMessageActions({
       // ignore
     }
   };
+
+  if (isMobile) {
+    const actions = [
+      { id: "copy", label: t.messageActions.copy, onClick: () => void onCopy() },
+      { id: "edit", label: t.messageActions.edit, onClick: onEdit },
+      ...(onToggleBookmark
+        ? [
+            {
+              id: "bookmark",
+              label: bookmarked ? t.messageActions.removeBookmark : t.messageActions.bookmark,
+              onClick: onToggleBookmark
+            }
+          ]
+        : []),
+      ...(onFork
+        ? [{ id: "fork", label: t.messageActions.forkConversation, onClick: onFork }]
+        : [])
+    ];
+
+    return (
+      <>
+        <div className="message-toolbar message-toolbar--mobile">
+          <MessageIconButton label={t.messageActions.more} onClick={() => setSheetOpen(true)}>
+            <IconMore size={15} />
+          </MessageIconButton>
+        </div>
+        <BottomSheet
+          open={sheetOpen}
+          title={t.messageActions.more}
+          onClose={() => setSheetOpen(false)}
+          actions={actions}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="message-toolbar">
