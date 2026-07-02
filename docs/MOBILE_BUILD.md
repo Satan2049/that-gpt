@@ -59,9 +59,11 @@ We **do not** configure Play Store or App Store signing in CI.
 
 | Artifact | Signing | Install |
 |----------|---------|---------|
-| `*-debug.apk` | Debug keystore (automatic) | Enable “Unknown sources”, install APK |
-| `*-unsigned.apk` | None | Sign locally before install |
+| `ThatGPT-android-*-debug-*.apk` | Debug keystore (automatic) | **Install this** (sideload) |
+| `ThatGPT-android-*-unsigned-*.apk` | None | Do not install — sign locally first |
 | `*.app` (simulator) | None | Drag onto iOS Simulator |
+
+`android:init` runs `sync-android-icons.mjs` so launcher icons from `src-tauri/icons/android/` are copied into the Gradle project.
 
 Release assets are attached by [`.github/workflows/mobile-release.yml`](../.github/workflows/mobile-release.yml) when you push a `v*.*.*` tag.
 
@@ -102,5 +104,7 @@ Phase 1 ships the **build pipeline**; Phase 2 ships the **mobile UX**; Phase 3 a
 | Safe areas + RTL | `mobile.css` — `env(safe-area-inset-*)`, `[dir="rtl"]` rules |
 | Settings / Search | Full-screen via `body.layout-mobile`; Search header on mobile |
 | Projects / Library | `ProjectWorkspace` compact mode; `LibraryPanel` card list |
+| Android icons | `sync-android-icons.mjs` after `android init` |
+| APK artifacts | Unique names per flavor (`*-debug-*` vs `*-unsigned-*`) — do not install unsigned |
 
 See [RELEASE_v2.6.2.md](RELEASE_v2.6.2.md) and [FORK_BUILDS.md](FORK_BUILDS.md) for release and fork workflow.

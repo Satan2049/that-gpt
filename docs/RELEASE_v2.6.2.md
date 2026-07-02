@@ -34,7 +34,15 @@ See also: [Fork builds from GitHub Actions](FORK_BUILDS.md) · [Mobile build gui
 
 ---
 
-## Download
+## Download (همه از GitHub Actions — بیلد محلی لازم نیست)
+
+با push تگ `v2.6.2`، **همهٔ artifactها روی GitHub Actions ساخته می‌شوند** و روی صفحه **Releases** قرار می‌گیرند.  
+کار تو: دانلود → آپلود به VirusTotal → paste لینک‌ها در release description.
+
+| Workflow | چه چیزی می‌سازد |
+|----------|------------------|
+| `release.yml` | Windows (NSIS + portable), macOS DMG, Linux AppImage, `SHA256.txt` |
+| `mobile-release.yml` | Android debug APK, Android unsigned APK, iOS sim zip |
 
 ### Desktop
 
@@ -45,17 +53,38 @@ See also: [Fork builds from GitHub Actions](FORK_BUILDS.md) · [Mobile build gui
 | macOS Apple Silicon | `ThatGPT_*_aarch64.dmg` | _[VT link — macOS DMG]_ |
 | Linux x64 | `ThatGPT_*_amd64.AppImage` | _[VT link — Linux AppImage]_ |
 
-Checksums: `SHA256.txt` on the GitHub Release page.
+Checksums: `SHA256.txt` (خود CI می‌سازد — برای VT لازم نیست)
 
-### Mobile (unsigned)
+### Mobile
 
-| Platform | File | VirusTotal |
-|----------|------|------------|
-| Android (debug, sideload) | `*-debug.apk` | _[VT link — Android debug APK]_ |
-| Android (release, unsigned) | `*-unsigned.apk` | _[VT link — Android unsigned APK]_ |
-| iOS Simulator | `ThatGPT-ios-simulator-v2.6.2.zip` | _[VT link — iOS sim zip]_ |
+| Platform | File (from Release) | برای نصب | برای VirusTotal |
+|----------|---------------------|----------|-----------------|
+| Android | `ThatGPT-android-universal-debug-v2.6.2.apk` (or `*-debug-*`) | ✅ **فقط همین** | ✅ |
+| Android | `ThatGPT-android-*-unsigned-*.apk` | ❌ بدون sign نصب نمی‌شود | اختیاری |
+| iOS Simulator | `ThatGPT-ios-simulator-v2.6.2.zip` | Simulator فقط | ✅ |
 
-> Debug APK is auto-signed with the debug keystore. Unsigned release APK must be signed locally before install.
+> **خطای «package appears to be invalid»:** معمولاً یعنی فایل **unsigned** را نصب کردی، یا Release قدیمی بود که debug/unsigned روی هم overwrite شده بود. فقط APK با **`debug`** در نام را نصب کن.
+
+---
+
+## VirusTotal workflow
+
+1. **Tag بزن** → Actions تمام بیلدها را می‌سازد (~۱۵–۴۵ دقیقه)
+   ```bash
+   git tag v2.6.2
+   git push origin v2.6.2
+   ```
+2. برو **GitHub → Releases → v2.6.2 → Assets** و این فایل‌ها را دانلود کن:
+   - `*-setup.exe`
+   - `*-portable.exe` (یا نام مشابه portable)
+   - `*.dmg`
+   - `*.AppImage`
+   - `ThatGPT-android-universal-debug-v2.6.2.apk` (**حتماً debug، نه unsigned**)
+   - `ThatGPT-ios-simulator-v2.6.2.zip`
+3. هر فایل را در [virustotal.com](https://www.virustotal.com/) آپلود کن → **Copy link**
+4. لینک‌ها را در **GitHub Release description** و جدول بالا paste کن
+
+**بیلد محلی لازم نیست** مگر بخواهی قبل از tag تست کنی.
 
 ---
 
@@ -68,8 +97,10 @@ Download the artifact for your OS from the [GitHub Release](https://github.com/Y
 ### Android (sideload)
 
 1. Enable **Install unknown apps** for your browser/files app.
-2. Install the **debug APK** (easiest) or sign the unsigned release APK yourself.
-3. Grant mic permission if using voice input.
+2. Download **`ThatGPT-android-universal-debug-v2.6.2.apk`** (name must contain **`debug`**, not `unsigned`).
+3. Install. Grant mic permission if using voice input.
+
+If you see **«App not installed as package appears to be invalid»**, you likely picked the **unsigned** APK — use the **debug** file only.
 
 ### iOS (simulator only)
 
@@ -80,7 +111,7 @@ No App Store / TestFlight signing in this release.
 
 ---
 
-## Build locally
+## Build locally (اختیاری — فقط برای تست قبل از tag)
 
 ```bash
 npm ci
@@ -107,7 +138,7 @@ git tag v2.6.2
 git push origin v2.6.2
 ```
 
-GitHub Actions uploads desktop + mobile artifacts to the Release. Edit the release description to paste VirusTotal links into the table above.
+CI خودش همه artifactها را روی Release می‌گذارد. بعد از اتمام Actions، فایل‌ها را برای VirusTotal بردار (بخش بالا).
 
 ---
 

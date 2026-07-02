@@ -55,8 +55,17 @@ jobs:
         run: |
           node scripts/collect-mobile-artifacts.mjs
           mkdir -p mobile-upload
-          cp release-mobile/*.apk mobile-upload/ 2>/dev/null || true
-          find src-tauri/gen/android/app/build/outputs/apk -name '*-unsigned.apk' -exec cp {} mobile-upload/ \;
+          shopt -s nullglob
+          files=(release-mobile/ThatGPT-android-*debug*.apk)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No debug APK found in release-mobile/"
+            ls -la release-mobile/ || true
+            exit 1
+          fi
+          cp "${files[@]}" mobile-upload/
+          for f in release-mobile/ThatGPT-android-*unsigned*.apk; do
+            [ -e "$f" ] && cp "$f" mobile-upload/
+          done
           ls -la mobile-upload/
 
       - name: Upload Android assets to GitHub Release

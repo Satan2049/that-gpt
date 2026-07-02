@@ -3,8 +3,26 @@
   "identifier": "com.thatgpt.app",
   "productName": "ThatGPT",
   "version": "2.6.2",
+  "build": {
+    "frontendDist": "../client/dist",
+    "beforeBuildCommand": "npm run build --prefix client"
+  },
+  "app": {
+    "withGlobalTauri": true
+  },
   "bundle": {
+    "active": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "shortDescription": "ThatGPT mobile chat for OpenAI-compatible APIs",
-    "longDescription": "ThatGPT is a local-first chat client for OpenAI-compatible APIs with Persian and English UI."
+    "longDescription": "ThatGPT is a local-first chat client for OpenAI-compatible APIs with Persian and English UI.",
+    "android": {
+      "minSdkVersion": 24
+    }
   }
 }
