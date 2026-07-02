@@ -1,10 +1,25 @@
 .mobile-shell {
   display: grid;
   grid-template-rows: auto 1fr auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 100dvh;
   max-height: 100dvh;
   background: var(--bg);
   overflow: hidden;
+}
+
+body.layout-mobile,
+body.layout-mobile #root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+body.layout-mobile .app-shell {
+  display: none !important;
 }
 
 .mobile-shell--thread,
@@ -80,8 +95,156 @@
   padding: var(--space-2) var(--space-3);
 }
 
-.mobile-chats-list .conversation-list {
-  height: 100%;
+.mobile-home {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mobile-home-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.mobile-home-brand-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.mobile-home-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--space-3) var(--space-2);
+  flex-shrink: 0;
+}
+
+.mobile-home-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-1);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.mobile-home-nav-item:active {
+  background: var(--surface-hover);
+}
+
+.mobile-home-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  color: var(--muted);
+}
+
+.mobile-home-recents {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 var(--space-3);
+}
+
+.mobile-home-recents-label {
+  padding: var(--space-2) var(--space-1);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mobile-home-recents .conversation-list {
+  flex: 1;
+  min-height: 0;
+}
+
+.mobile-dock {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+  z-index: 20;
+}
+
+.mobile-dock-chat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-dock-profile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mobile-dock-mic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mobile-composer-shell {
+  border-radius: var(--radius-pill);
+  background: var(--composer-bg);
+  border: 1px solid var(--composer-border);
+}
+
+.mobile-shell--thread .mobile-messages {
+  margin: 0;
+  border-radius: 0;
+}
+
+.mobile-shell--thread .mobile-composer-area {
+  padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
+  background: var(--bg);
+  border-top: 1px solid var(--border);
 }
 
 .mobile-messages {
@@ -181,51 +344,19 @@
   color: var(--muted);
 }
 
-.mobile-tabbar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--border);
-  background: var(--bg-elevated);
-  z-index: 20;
+.mobile-shell .conversation-item-actions,
+.mobile-shell .projects-folder-delete {
+  opacity: 1;
 }
 
-.mobile-tab {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 52px;
-  min-width: 0;
-  padding: var(--space-1);
-  border: none;
+.mobile-shell .conversation-item {
   border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
 }
 
-.mobile-tab-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
+.mobile-shell .conversation-item-title,
+.mobile-shell .project-chat-title {
+  font-size: 0.95rem;
 }
-
-.mobile-tab-label {
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.mobile-tab.active {
-  color: var(--primary);
-  background: var(--primary-surface);
-}
-
 .mobile-shell .message-toolbar {
   opacity: 1;
 }
@@ -560,7 +691,12 @@ body.layout-mobile .modal-card {
 }
 
 /* RTL mobile polish */
-[dir="rtl"] .mobile-topbar-actions {
+[dir="rtl"] .mobile-home-nav-item,
+[dir="rtl"] .mobile-dock-chat {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .mobile-home-brand {
   flex-direction: row-reverse;
 }
 

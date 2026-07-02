@@ -20,3 +20,4 @@ function run(command, args) {
 run(npx, ["tauri", "android", "init", "--ci"]);
 run(process.execPath, [path.join(root, "scripts/patch-android-manifest.mjs")]);
 run(process.execPath, [path.join(root, "scripts/sync-android-icons.mjs")]);
+run(process.execPath, [path.join(root, "scripts/patch-android-gradle.mjs")]);
